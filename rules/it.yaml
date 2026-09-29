@@ -1,0 +1,29 @@
+# Rule set for the IT and software vertical.
+#
+# Edit this file, not the code. A second sector is a copy of this file with
+# different numbers, not a new release.
+name: IT and software
+
+# A hard gate can produce NO-GO, but only when both numbers are known.
+# A requirement we cannot measure, or a profile key you have not filled,
+# produces CHECK. That is deliberate — see ground rule 2 in STATUS.md.
+hard_gates:
+  - kind: turnover
+    profile: average_turnover_ron
+    label: annual turnover
+  - kind: experience
+    profile: similar_experience_ron
+    label: similar experience
+  - kind: deposit
+    profile: available_guarantee_ron
+    label: participation guarantee
+
+# The score orders the list. It never decides GO on its own.
+weights:
+  cpv_match: 25
+  value_fit: 25
+  headroom: 30
+  deadline: 20
+
+# A notice at or above this score, with every gate passed, is a GO.
+go_threshold: 60

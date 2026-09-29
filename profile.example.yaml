@@ -1,0 +1,29 @@
+# Copy this file to profile.yaml and put your own numbers in.
+# profile.yaml is in .gitignore — it never leaves your machine.
+
+company_name: Example SRL
+cui: RO12345678
+
+# Money, in RON. Leave a key out if you do not know it yet:
+# an absent figure produces CHECK, never NO-GO.
+average_turnover_ron: 1200000        # average of the last 3 financial years
+similar_experience_ron: 900000       # largest comparable contract set delivered
+available_guarantee_ron: 50000       # cash you can lock up to take part
+
+min_contract_ron: 50000
+max_contract_ron: 3000000
+
+# CPV codes you want to watch. The first four digits are what is matched.
+cpv_watchlist:
+  - "72000000"
+  - "72260000"
+  - "48000000"
+  - "30200000"
+
+counties:
+  - Cluj
+  - Bucuresti
+
+certifications:
+  - ISO 9001
+  - ISO 27001

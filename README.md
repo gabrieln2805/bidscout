@@ -1,0 +1,103 @@
+# bidscout
+
+**A bid agent for Romanian public tenders (SEAP / SICAP).**
+
+It reads each new tender, compares it with your company profile, and answers
+one question: *should you bid?*
+
+---
+
+## Try it in one minute
+
+```bash
+make install
+make demo
+```
+
+`make demo` builds a small database from captured fixtures and scores it. It
+needs no network and no profile. You should see one NO-GO with both numbers
+printed, one CHECK, and one notice skipped because it was never read in full.
+
+Then make it yours:
+
+```bash
+cp profile.example.yaml profile.yaml    # put your own numbers in
+.venv/bin/bidscout --db data/demo.sqlite3 score
+.venv/bin/bidscout --db data/demo.sqlite3 explain 1096282
+```
+
+## The problem
+
+A Romanian company that sells to the state loses two or three days on every
+tender file, and most of that work happens before anybody decides to bid:
+read 30 to 80 pages of PDF to find the qualification criteria, compare them
+with your turnover and your past contracts, list the documents and the
+deadlines, then fill the DUAE.
+
+Monitor tools exist. They tell you that a tender appeared. They do not tell
+you whether you qualify.
+
+## What bidscout does today
+
+1. **Watches** SEAP for tenders in your CPV codes and stores what is new.
+2. **Reads** the qualification section out of the portal's own JSON. About
+   60% of tenders can be decided without opening a PDF.
+3. **Extracts** the gates as facts that each keep the buyer's own sentence.
+4. **Decides** GO, CHECK or NO-GO with a score out of 100 and a short reason:
+
+   > **NO-GO.** annual turnover: the buyer asks for 2.700.000 RON;
+   > you have 1.200.000 RON.
+   > Source: `efCriteriaMin`.
+
+Not built yet: the web page, direct acquisitions, the document checklist,
+alerts, and PDF reading for the other 40%. See `STATUS.md`.
+
+## How it decides
+
+A plain rules engine makes the decision. The rules live in `rules/it.yaml`,
+not in code, so every verdict can be explained, tested, and corrected by a
+person who does not write Python.
+
+```
+hard gates  -> a failure = NO-GO, but only when both numbers are known
+weights     -> a score from 0 to 100 for everything else
+```
+
+A missing fact or an unreadable requirement produces **CHECK**, never NO-GO.
+That rule is held in place by `tests/test_unknown_never_becomes_no_go.py`.
+
+## Commands
+
+| Command | What it does | Needs the portal |
+|---|---|---|
+| `bidscout score` | Rank stored tenders | no |
+| `bidscout explain <id>` | Every reason behind one verdict, with quotes | no |
+| `bidscout stats` | What the database holds | no |
+| `bidscout watch --days 1` | Poll the portal and store what is new | **yes** |
+| `make test` | 65 offline tests | no |
+| `make lint` | `ruff`, line length 100 | no |
+
+## Layout
+
+```
+src/bidscout/
+  sicap/      the only place that knows a SEAP URL
+  extract/    portal text -> facts that keep their quote
+  decide/     the rules engine; the rules are YAML
+  store/      SQLite; the raw JSON is never dropped
+  pipeline.py the glue, and the offline scorer
+  cli.py      the commands
+rules/it.yaml the IT rule set
+docs/         the verified findings about the portal
+```
+
+## Data
+
+Public data only: the SICAP public JSON API behind `e-licitatie.ro`. No
+sign-in, no scraping behind a login, no paywall. Every endpoint, field and
+limit is written down in `docs/data-sources.md`.
+
+## Limits
+
+bidscout is a decision aid. It is not legal advice, and it does not submit
+anything for you. You read the file, you approve it, you send it.
