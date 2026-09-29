@@ -120,18 +120,54 @@ after the behaviour it defends.
 
 ## Immediate next steps
 
-In order. Each one is a session or less.
+In order. Each one is a session or less. The order is deliberate: the data
+model, the pipeline and a number for accuracy come before anything anybody
+looks at. A pretty page over a parser nobody has measured is worth nothing.
 
 1. **Re-verify against the live portal.** Run `bidscout watch --days 1` on
    your machine. Fix any endpoint or field that has moved, and correct
-   `docs/data-sources.md`. Nothing below is worth doing before this.
-2. **A web page.** One page: your company on the left, today's tenders ranked
+   `docs/data-sources.md`. *Needs the portal, so only Gabriel can do it.*
+
+2. **An accuracy harness.** `bidscout eval` over a labelled fixture set:
+   per-gate coverage (how often a figure is found at all) and precision (how
+   often the figure is right), printed as a table. Add
+   `bidscout capture <id>` so a real Section 3 becomes a new fixture in one
+   command. This is what turns "60% coverage" from a claim into a number you
+   can re-measure after every parser change. Build it first; everything
+   below is guesswork without it.
+
+3. **Close the data-model gaps that already bite.**
+   - Secondary CPV codes are not stored, so `--cpv` silently misses any
+     notice whose IT code is not the primary one.
+   - Lots are not modelled at all (`hasLots`), so a multi-lot tender is
+     scored as one thing.
+   - Requirements are re-parsed on every score and never stored, so a
+     verdict cannot be traced back without redoing the work. Give them a
+     table with their citations.
+
+4. **Wire the ingest pipeline end to end.** `watch` stores notices, but
+   nothing fetches their Section 3 or their file list, so the database fills
+   with notices the scorer then skips. Add `bidscout fetch`: for every
+   stored notice with no Section 3, pull the section and the document list
+   and store both. Build and test it offline against a fake transport; run
+   it live on your own machine.
+
+5. **Direct purchases.** The high-volume channel, already mapped, not yet
+   connected. Model, store, and a short rule set — there is no Section 3 to
+   read, so the gates differ.
+
+6. **Simplified notices (SCN).** 60% of everything published. The detail
+   endpoint is still unknown, so the model and the skip-and-count path can
+   be built now and wired when the endpoint is found.
+
+7. **A web page.** One page: your company on the left, today's tenders ranked
    on the right, click one to see why. This is the thing you send a link to.
-3. **Direct purchases.** The high-volume channel, already mapped, not yet
-   connected. This is what would make somebody open the app daily.
-4. **The document checklist and the questions.** For a GO tender: what you
+   The original mockup was lost, so this needs a fresh design.
+
+8. **The document checklist and the questions.** For a GO tender: what you
    must produce, by when, and which questions are worth asking the buyer.
-5. **An alert.** Email or desktop, when something new scores GO.
+
+9. **An alert.** Email or desktop, when something new scores GO.
 
 ---
 
