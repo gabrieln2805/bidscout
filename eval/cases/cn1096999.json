@@ -1,0 +1,27 @@
+{
+  "name": "cn1096999",
+  "c_notice_id": "1096999",
+  "notice_no": "CN1096999",
+  "captured_at": "2026-09-20",
+  "labelled": true,
+  "labelled_by": "Gabriel (20 September 2026 spike), transcribed 30 September 2026",
+  "note": "The buyer states a turnover rule and names no figure. The right answer is a requirement with no number, which the engine turns into CHECK.",
+  "labels": {
+    "turnover": {
+      "amount": null,
+      "currency": null
+    },
+    "qualification": {
+      "amount": null,
+      "currency": null
+    }
+  },
+  "section3_raw": {
+    "initNoticeId": "1096999",
+    "efCriteriaMin": "<p>Ofertantul va face dovada unei cifre de afaceri corespunz&#259;toare valorii estimate a contractului, conform documenta&#539;iei de atribuire.</p>",
+    "tpCriteriaQAStandardMin": "",
+    "depositsAndWarranties": "",
+    "mandatoryProfesionalQualif": "<p>Certificat ONRC.</p>",
+    "personalSituation": ""
+  }
+}

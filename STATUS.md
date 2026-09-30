@@ -52,13 +52,14 @@ Two goals, in order:
 | Deciding GO / CHECK / NO-GO | Working, 3 gates + a score | 7 offline tests |
 | Storing what we find | Working | 7 offline tests |
 | Scoring from what we stored | Working, no requests to SEAP | 5 offline tests |
-| The command line | Working offline | 6 offline tests |
+| Measuring how well we read | Working, on 3 labelled notices | `make eval` + 17 tests |
+| The command line | Working offline | 11 offline tests |
 | Writing the bid documents | Not started | — |
 | A web page anyone can look at | Not started | — |
 | Direct purchases | Mapped, not wired in | — |
 | Reading the PDFs (the other 40%) | Not started | — |
 
-**65 automatic tests, all offline, all passing.** `ruff` clean at line
+**87 automatic tests, all offline, all passing.** `ruff` clean at line
 length 100.
 
 ---
@@ -75,6 +76,10 @@ make install && make demo
 - **Watch the portal** — polls a publication window and stores what is new.
   *Written but not yet run against the live portal.*
 - **See what the database holds** — `bidscout stats`.
+- **Measure how well it reads** — `bidscout eval` prints, per gate, how
+  often a figure is found and how often it is right, against notices
+  labelled by hand in `eval/cases/`. `bidscout capture <id>` turns a
+  stored Section 3 into a new case to label.
 
 Your company lives in one plain file (`profile.yaml`). The rules live in
 another (`rules/it.yaml`). Neither needs a programmer.
@@ -100,6 +105,13 @@ after the behaviour it defends.
   being read as sums.)*
 - A requirement with no quote cannot be constructed at all.
 - A notice with no stored Section 3 is skipped and counted, never scored.
+- An unlabelled evaluation case is listed, never counted. Otherwise every
+  capture would raise the accuracy figure without anybody checking it.
+- A figure the buyer never wrote is counted as **invented**, in its own
+  column, separately from a miss. A miss costs an opportunity; an
+  invention can push a verdict to NO-GO on a number nobody wrote.
+- A label amount written as an unquoted JSON number is refused, because
+  `json` reads it as a float and it is then not the number that was typed.
 
 ---
 
@@ -128,13 +140,14 @@ looks at. A pretty page over a parser nobody has measured is worth nothing.
    your machine. Fix any endpoint or field that has moved, and correct
    `docs/data-sources.md`. *Needs the portal, so only Gabriel can do it.*
 
-2. **An accuracy harness.** `bidscout eval` over a labelled fixture set:
-   per-gate coverage (how often a figure is found at all) and precision (how
-   often the figure is right), printed as a table. Add
-   `bidscout capture <id>` so a real Section 3 becomes a new fixture in one
-   command. This is what turns "60% coverage" from a claim into a number you
-   can re-measure after every parser change. Build it first; everything
-   below is guesswork without it.
+2. ~~**An accuracy harness.** `bidscout eval` over a labelled fixture set:
+   per-gate coverage and precision, printed as a table, plus
+   `bidscout capture <id>`.~~ **Done 30 September 2026.** Built and tested
+   offline. *It is only loaded with three labelled cases, so the table is a
+   smoke test, not a measurement.* **Next: capture and label about thirty
+   real notices** — `bidscout capture <id> --live` on your machine, one per
+   notice, then fill the labels in. Until then the "60% coverage" figure is
+   still a guess.
 
 3. **Close the data-model gaps that already bite.**
    - Secondary CPV codes are not stored, so `--cpv` silently misses any
@@ -268,3 +281,57 @@ Could not do, and why:
 
 Next session starts at **immediate step 1: re-verify against the live
 portal**, then step 2, the web page.
+
+### Session 4 — 30 September 2026 (cloud, no portal access)
+
+Picked immediate step 2, the accuracy harness. Step 1 (re-verify against the
+live portal) was skipped, not done: the cloud sandbox cannot reach
+`e-licitatie.ro`, so it stays Gabriel's job on his own machine.
+
+Built:
+
+- `accuracy/cases.py` — the labelled-case format. One file per notice holding
+  the raw Section 3 (ground rule 3) *and* the labels a person wrote. A label
+  amount must be a quoted string; an unquoted JSON number is refused with an
+  instruction, because `json` reads it as a float and it is then no longer
+  the number the labeller typed.
+- `accuracy/report.py` — coverage and precision per gate, printed as a table,
+  with three failure counts kept apart: `missed`, `invent` and `spur`. An
+  invented figure is the one that can push a verdict to NO-GO on a number the
+  buyer never wrote, so it has its own column and its own test.
+- `accuracy/capture.py` — `capture_case`, from the database by default and
+  from the portal with a client. The client is a one-method protocol, so the
+  live path is tested offline with a fake and no socket is opened.
+- `bidscout eval` and `bidscout capture <id> [--live]`, `make eval`,
+  `eval/README.md` explaining how to label, and `errors.SectionNotStored`.
+- `eval/cases/` seeded with three cases: two transcribed from the
+  20 September spike and one written by hand carrying two traps in one notice
+  (a turnover rule whose only numbers are the three financial years, and a
+  guarantee stated in euro).
+
+`bidscout eval` today: coverage 100% and precision 100% on every gate,
+0 invented, 0 spurious, 0 missed — **on three cases**. That is a smoke test.
+The number only starts meaning something at about thirty.
+
+**65 tests before, 87 after. `ruff` clean.** No existing test was changed or
+weakened.
+
+Could not do, and why:
+
+- **No live check of anything**, again. No `watch`, `probe`, `capture --live`
+  or any other call to the portal was run. The `--live` path is written and
+  tested against a fake transport; it has never spoken to SEAP.
+- **The init-notice-id question is still open.** `pipeline.notice_from_item`
+  reads `init_notice_id` from the item's `noticeId` (384463 in the fixture),
+  while `tests/fixtures/section3_cn1096282.json` carries
+  `initNoticeId: 1096282`, which is the *cNoticeId*. One of the two is wrong
+  and only a live call can say which. `capture_case` prefers the stored init
+  id and falls back to the id it was given, with a comment saying so, and the
+  test asserts today's behaviour rather than a guess about the portal.
+- **Three cases is not a measurement.** Labelling is the bottleneck now and
+  it needs a human who can read the Romanian sentence.
+
+Next session starts at **immediate step 1** (live re-verify, Gabriel's
+machine), then **step 3** (secondary CPV codes, lots, stored requirements).
+Labelling thirty notices for the harness can happen in parallel and needs no
+code.
