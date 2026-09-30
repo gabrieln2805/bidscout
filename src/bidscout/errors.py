@@ -31,3 +31,12 @@ class SearchTooWide(BidscoutError):
 
 class NoticeNotFound(BidscoutError):
     """The portal has no detail view for this notice id or notice type."""
+
+
+class SectionNotStored(BidscoutError):
+    """We were asked to work from a notice's Section 3 and have none on file.
+
+    Distinct from ``NoticeNotFound``: the portal may well have the section, we
+    simply have not fetched it. Saying so is better than carrying an empty
+    payload forward, which would look like a buyer who asks for nothing.
+    """

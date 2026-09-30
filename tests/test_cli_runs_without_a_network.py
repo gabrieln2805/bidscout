@@ -1,5 +1,7 @@
 """The commands a user runs most often must work with the portal unreachable."""
 
+from pathlib import Path
+
 import pytest
 import yaml
 
@@ -56,3 +58,42 @@ def test_a_missing_profile_is_an_instruction_not_a_traceback(tmp_path, capsys) -
     with pytest.raises(SystemExit):
         main(["--db", str(tmp_path / "x.sqlite3"), "--profile", "nope.yaml", "score"])
     assert "profile.example.yaml" in capsys.readouterr().err
+
+
+CASE_DIR = Path(__file__).parents[1] / "eval" / "cases"
+
+
+def test_eval_prints_the_accuracy_table(capsys) -> None:
+    assert main(["eval", "--cases", str(CASE_DIR)]) == 0
+    out = capsys.readouterr().out
+    assert "cover" in out
+    assert "labelled cases measured" in out
+
+
+def test_eval_needs_no_profile(capsys) -> None:
+    """It measures the reader, not the rules, so a missing profile must not stop it."""
+    assert main(["--profile", "nowhere.yaml", "eval", "--cases", str(CASE_DIR)]) == 0
+    assert "cover" in capsys.readouterr().out
+
+
+def test_eval_with_no_cases_says_how_to_make_one(tmp_path, capsys) -> None:
+    assert main(["eval", "--cases", str(tmp_path / "empty")]) == 1
+    assert "bidscout capture" in capsys.readouterr().err
+
+
+def test_capture_writes_a_case_from_the_database(ready_db, tmp_path, capsys) -> None:
+    db, _ = ready_db
+    cases = tmp_path / "cases"
+    assert main(["--db", str(db), "capture", "1096282", "--cases", str(cases)]) == 0
+    assert (cases / "cn1096282.json").exists()
+    assert "Fill in the labels" in capsys.readouterr().out
+
+
+def test_capture_without_a_stored_section_is_an_instruction_not_a_traceback(
+    tmp_path, notice_item, capsys
+) -> None:
+    db = tmp_path / "empty.sqlite3"
+    with Store(db) as store:
+        store.save_notice(notice_from_item(notice_item))
+    assert main(["--db", str(db), "capture", "1096282", "--cases", str(tmp_path / "c")]) == 1
+    assert "no Section 3 stored" in capsys.readouterr().err

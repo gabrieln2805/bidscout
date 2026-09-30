@@ -49,6 +49,11 @@ you whether you qualify.
    > you have 1.200.000 RON.
    > Source: `efCriteriaMin`.
 
+5. **Measures itself.** `bidscout eval` reads a set of notices a person has
+   labelled by hand and prints, per gate, how often the extractor finds a
+   figure at all and how often the figure is right. The "60%" above is a
+   guess from a one-day spike until that table says otherwise.
+
 Not built yet: the web page, direct acquisitions, the document checklist,
 alerts, and PDF reading for the other 40%. See `STATUS.md`.
 
@@ -73,8 +78,11 @@ That rule is held in place by `tests/test_unknown_never_becomes_no_go.py`.
 | `bidscout score` | Rank stored tenders | no |
 | `bidscout explain <id>` | Every reason behind one verdict, with quotes | no |
 | `bidscout stats` | What the database holds | no |
+| `bidscout eval` | Measure the extractor against the labelled cases | no |
+| `bidscout capture <id>` | Turn a stored Section 3 into a new case to label | no |
 | `bidscout watch --days 1` | Poll the portal and store what is new | **yes** |
-| `make test` | 65 offline tests | no |
+| `bidscout capture <id> --live` | Fetch a Section 3 and capture it | **yes** |
+| `make test` | 87 offline tests | no |
 | `make lint` | `ruff`, line length 100 | no |
 
 ## Layout
@@ -87,7 +95,9 @@ src/bidscout/
   store/      SQLite; the raw JSON is never dropped
   pipeline.py the glue, and the offline scorer
   cli.py      the commands
+  accuracy/   the harness: labelled cases in, a coverage table out
 rules/it.yaml the IT rule set
+eval/cases/   notices labelled by hand; the input `bidscout eval` measures
 docs/         the verified findings about the portal
 ```
 

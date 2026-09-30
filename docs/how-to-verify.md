@@ -7,7 +7,7 @@ check.** No finding lives only in a chat window. Every claim gets a command.
 
 ```bash
 make install
-make check      # 65 offline tests + ruff
+make check      # 87 offline tests + ruff
 make demo       # the whole pipeline on captured fixtures, no network
 ```
 
@@ -15,12 +15,14 @@ make demo       # the whole pipeline on captured fixtures, no network
 
 | Command | Claim it tests | Needs the portal |
 |---|---|---|
-| `make test` | 65 offline tests on captured fixtures. Under a second. | no |
+| `make test` | 87 offline tests on captured fixtures. Under a second. | no |
 | `make lint` | `ruff` clean at line length 100. | no |
 | `make demo` | Store → extract → decide → rank, end to end. | no |
 | `bidscout score` | Ranking from the database only. | no |
 | `bidscout explain <id>` | Every reason carries the buyer's own sentence. | no |
 | `bidscout stats` | What the database holds. | no |
+| `make eval` | Coverage and precision per gate, on hand-labelled notices. | no |
+| `bidscout capture <id>` | A stored Section 3 becomes a new case to label. | no |
 | `bidscout watch --days 1` | The portal still answers as documented. | **yes** |
 
 ## What is proven and what is not (27 September 2026)
@@ -35,13 +37,18 @@ make demo       # the whole pipeline on captured fixtures, no network
 - An unreadable requirement or a missing profile figure gives CHECK, not NO-GO.
 - A notice with no stored Section 3 is skipped and counted, not scored.
 - The raw portal payload survives a database round trip.
+- The accuracy harness counts nothing nobody labelled, and reports an
+  invented figure separately from a missed one.
 
 **Not proven, because the cloud cannot reach e-licitatie.ro:**
 
 - That the endpoints in `docs/data-sources.md` still exist and still answer.
 - That the field names in Section 3 are unchanged.
 - The 60% coverage figure, the volume table, and every other number measured
-  during the 20 September spike.
+  during the 20 September spike. `make eval` now measures coverage, but on
+  three labelled notices only — two transcribed from the spike and one
+  written by hand. Three cases is a smoke test, not a measurement. Capture
+  thirty and the number starts meaning something.
 
 Run `bidscout watch --days 1` on your own machine to close that gap. If a
 field has moved, fix `docs/data-sources.md` in the same commit as the code.

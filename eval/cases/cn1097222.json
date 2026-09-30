@@ -1,0 +1,36 @@
+{
+  "name": "cn1097222",
+  "c_notice_id": "1097222",
+  "notice_no": "CN1097222",
+  "captured_at": "2026-09-30",
+  "labelled": true,
+  "labelled_by": "hand-written, 30 September 2026",
+  "note": "Written by hand to hold two traps in one notice: a turnover rule whose only numbers are the three financial years, and a guarantee stated in euro. Not a captured notice - replace it once a real one with these shapes is captured.",
+  "labels": {
+    "turnover": {
+      "amount": null,
+      "currency": null
+    },
+    "experience": {
+      "amount": "450000.00",
+      "currency": "RON"
+    },
+    "deposit": {
+      "amount": "4500.00",
+      "currency": "EUR"
+    },
+    "personal_situation": {
+      "amount": null,
+      "currency": null
+    }
+  },
+  "section3_raw": {
+    "initNoticeId": 1097222,
+    "personalSituation": "<p>Ofertantii nu trebuie sa se regaseasca in situatiile prevazute la art. 164, 165, 167 din Legea 98/2016.</p>",
+    "efCriteriaMin": "<p>Media cifrei de afaceri generale pe ultimele 3 exerci&#539;ii financiare (2023, 2024, 2025) va fi cel pu&#539;in egal&#259; cu valoarea estimat&#259; a contractului.</p>",
+    "tpCriteriaQAStandardMin": "<p>Experien&#539;a similar&#259;: servicii similare &#238;n valoare cumulat&#259; de minimum <b>450.000,00 lei</b> &#238;n ultimii 3 ani.</p>",
+    "depositsAndWarranties": "<p>Garan&#539;ia de participare este de <b>4.500,00 euro</b>.</p>",
+    "mandatoryProfesionalQualif": "",
+    "prCriteria": ""
+  }
+}

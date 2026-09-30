@@ -14,11 +14,15 @@ from pathlib import Path
 from typing import Any
 
 from bidscout import __version__
+from bidscout.accuracy.cases import DEFAULT_CASE_DIR
 from bidscout.decide.rules import RuleSet, load_profile, load_rules
+from bidscout.errors import SectionNotStored
 from bidscout.pipeline import notice_from_item, score_stored
 from bidscout.store.db import DEFAULT_DB_PATH, Store
 
-OFFLINE_COMMANDS = frozenset({"score", "stats", "explain"})
+#: Commands that never open a socket. ``capture`` is offline too unless it is
+#: given ``--live``, so it is not in this set.
+OFFLINE_COMMANDS = frozenset({"score", "stats", "explain", "eval"})
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -45,6 +49,20 @@ def build_parser() -> argparse.ArgumentParser:
     watch.add_argument("--days", type=int, default=1)
     watch.add_argument("--once", action="store_true")
 
+    evaluate = sub.add_parser(
+        "eval", help="measure the extractor against the labelled cases (no request to SEAP)"
+    )
+    evaluate.add_argument("--cases", default=str(DEFAULT_CASE_DIR), help="the labelled case set")
+
+    capture = sub.add_parser(
+        "capture", help="turn one notice's Section 3 into a new case to label"
+    )
+    capture.add_argument("c_notice_id")
+    capture.add_argument("--cases", default=str(DEFAULT_CASE_DIR), help="where to write the case")
+    capture.add_argument(
+        "--live", action="store_true", help="fetch Section 3 from SEAP first (needs the portal)"
+    )
+
     return parser
 
 
@@ -58,6 +76,10 @@ def main(argv: list[str] | None = None) -> int:
         return _cmd_explain(args)
     if args.command == "watch":
         return _cmd_watch(args)
+    if args.command == "eval":
+        return _cmd_eval(args)
+    if args.command == "capture":
+        return _cmd_capture(args)
     return 2
 
 
@@ -121,6 +143,42 @@ def _cmd_explain(args: argparse.Namespace) -> int:
             return 0
     print(f"No stored notice {args.c_notice_id}.", file=sys.stderr)
     return 1
+
+
+def _cmd_eval(args: argparse.Namespace) -> int:
+    """Print the accuracy table. Needs no profile: it judges the reader, not the rules."""
+    from bidscout.accuracy.cases import load_cases  # noqa: PLC0415 - keeps import cost local
+    from bidscout.accuracy.report import format_report, measure  # noqa: PLC0415
+
+    cases = load_cases(args.cases)
+    if not cases:
+        print(
+            f"No cases in {args.cases}. Capture one with `bidscout capture <c-notice-id>`.",
+            file=sys.stderr,
+        )
+        return 1
+    print(format_report(measure(cases)))
+    return 0
+
+
+def _cmd_capture(args: argparse.Namespace) -> int:
+    """Write one unlabelled case. The labels are a person's job, not the tool's."""
+    from bidscout.accuracy.capture import capture_case  # noqa: PLC0415 - keeps import cost local
+
+    client = None
+    if args.live:
+        from bidscout.sicap.client import SicapClient  # noqa: PLC0415 - avoids importing requests
+
+        client = SicapClient()
+
+    with Store(args.db) as store:
+        try:
+            path = capture_case(store, args.c_notice_id, args.cases, client=client)
+        except SectionNotStored as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
+    print(f"Wrote {path}. Fill in the labels, set labelled to true, then run `bidscout eval`.")
+    return 0
 
 
 def _cmd_watch(args: argparse.Namespace) -> int:
