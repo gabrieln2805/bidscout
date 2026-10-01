@@ -16,6 +16,7 @@ from bidscout.store.db import Store
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "tests" / "fixtures"
+CASES = ROOT / "eval" / "cases"
 DEMO_DB = ROOT / "data" / "demo.sqlite3"
 
 
@@ -24,6 +25,10 @@ def main() -> int:
     item = json.loads((FIXTURES / "notice_item.json").read_text(encoding="utf-8"))
     full = json.loads((FIXTURES / "section3_cn1096282.json").read_text(encoding="utf-8"))
     vague = json.loads((FIXTURES / "section3_vague.json").read_text(encoding="utf-8"))
+    # The third labelled case, reused so the demo shows a notice whose guarantee
+    # the buyer stated in euro and whose turnover rule names only the three
+    # financial years. Both are traps the extractor has to refuse to guess at.
+    euro = json.loads((CASES / "cn1097222.json").read_text(encoding="utf-8"))["section3_raw"]
 
     with Store(DEMO_DB) as store:
         store.save_notice(notice_from_item(item))
@@ -35,7 +40,15 @@ def main() -> int:
             )
         )
         store.save_section3("1096999", vague)
-        # A third notice we have not read in full, to show it is skipped.
+        store.save_notice(
+            notice_from_item(
+                {**item, "cNoticeId": 1097222, "noticeNo": "CN1097222",
+                 "contractTitle": "Servicii de dezvoltare portal web si integrare",
+                 "estimatedValueRon": 620000.0}
+            )
+        )
+        store.save_section3("1097222", euro)
+        # A fourth notice we have not read in full, to show it is skipped.
         store.save_notice(
             notice_from_item(
                 {**item, "cNoticeId": 1097111, "noticeNo": "CN1097111",

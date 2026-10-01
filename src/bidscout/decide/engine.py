@@ -71,6 +71,10 @@ def decide(
 
 _PASS, _FAIL, _UNKNOWN = "pass", "fail", "unknown"
 
+#: The currency every figure in ``profile.yaml`` is written in. A requirement in
+#: any other currency is not comparable without a rate bidscout cannot verify.
+PROFILE_CURRENCY = "RON"
+
 
 def _check_gate(gate: Any, requirement: Requirement, profile: dict[str, Any]) -> tuple[str, Reason]:
     """Compare one requirement against the profile, keeping the buyer's quote."""
@@ -78,6 +82,22 @@ def _check_gate(gate: Any, requirement: Requirement, profile: dict[str, Any]) ->
         return _UNKNOWN, Reason(
             f"{gate.label}: the buyer states a requirement but no figure could be read. "
             "Read the quote and decide by hand.",
+            quote=requirement.quote,
+            source_field=requirement.source_field,
+        )
+
+    # The profile is in lei. A threshold the buyer wrote in another currency
+    # cannot be compared without an exchange rate, and the rate that applies is
+    # the one on the notice's own date — a live fact bidscout cannot check. So
+    # this is a "we could not tell", which ground rule 2 turns into CHECK.
+    # Comparing the bare number would understate a euro guarantee about fivefold
+    # and quietly let a tender pass a gate it was never measured against.
+    if requirement.currency and requirement.currency != PROFILE_CURRENCY:
+        return _UNKNOWN, Reason(
+            f"{gate.label}: the buyer asks for "
+            f"{_money(requirement.amount, requirement.currency)}, and your profile is in "
+            f"{PROFILE_CURRENCY}. bidscout does not convert currencies, so convert this "
+            "one by hand before deciding.",
             quote=requirement.quote,
             source_field=requirement.source_field,
         )
@@ -178,13 +198,22 @@ def _headroom(requirements: list[Requirement], profile: dict[str, Any]) -> float
         have = profile.get(key) if key else None
         if have is None or requirement.amount is None or requirement.amount == 0:
             continue
+        if requirement.currency and requirement.currency != PROFILE_CURRENCY:
+            # Dividing lei by euro would invent headroom out of an exchange
+            # rate nobody applied. The gate already reports this as CHECK.
+            continue
         ratios.append(float(Decimal(str(have)) / requirement.amount))
     if not ratios:
         return None
     return max(0.0, min(1.0, (min(ratios) - 1.0)))
 
 
-def _money(value: Decimal) -> str:
-    """Format a sum the way a Romanian reader expects to see it."""
+def _money(value: Decimal, currency: str = PROFILE_CURRENCY) -> str:
+    """Format a sum the way a Romanian reader expects to see it.
+
+    The currency is a parameter, not a constant, because a buyer may state a
+    guarantee in euro. Printing "4.500 RON" for "4.500,00 euro" would be a
+    false claim about the buyer's own sentence.
+    """
     whole = f"{value:,.0f}".replace(",", ".")
-    return f"{whole} RON"
+    return f"{whole} {currency}"
