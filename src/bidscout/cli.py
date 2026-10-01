@@ -22,7 +22,7 @@ from bidscout.store.db import DEFAULT_DB_PATH, Store
 
 #: Commands that never open a socket. ``capture`` is offline too unless it is
 #: given ``--live``, so it is not in this set.
-OFFLINE_COMMANDS = frozenset({"score", "stats", "explain", "eval"})
+OFFLINE_COMMANDS = frozenset({"score", "stats", "explain", "requirements", "eval"})
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -42,6 +42,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     explain = sub.add_parser("explain", help="show every reason behind one verdict")
     explain.add_argument("c_notice_id")
+
+    requirements = sub.add_parser(
+        "requirements",
+        help="show the sentences the last score read for one notice (no request to SEAP)",
+    )
+    requirements.add_argument("c_notice_id")
 
     sub.add_parser("stats", help="what the database holds")
 
@@ -74,6 +80,8 @@ def main(argv: list[str] | None = None) -> int:
         return _cmd_score(args)
     if args.command == "explain":
         return _cmd_explain(args)
+    if args.command == "requirements":
+        return _cmd_requirements(args)
     if args.command == "watch":
         return _cmd_watch(args)
     if args.command == "eval":
@@ -98,7 +106,7 @@ def _load(args: argparse.Namespace) -> tuple[dict[str, Any], RuleSet]:
 def _cmd_stats(args: argparse.Namespace) -> int:
     with Store(args.db) as store:
         for table, count in store.counts().items():
-            print(f"{table:>10}: {count}")
+            print(f"{table:>12}: {count}")
     return 0
 
 
@@ -143,6 +151,33 @@ def _cmd_explain(args: argparse.Namespace) -> int:
             return 0
     print(f"No stored notice {args.c_notice_id}.", file=sys.stderr)
     return 1
+
+
+def _cmd_requirements(args: argparse.Namespace) -> int:
+    """Print the stored extraction for one notice, quote by quote.
+
+    This reads the ``requirements`` table and nothing else: no profile, no
+    rules, no parser run. It answers "which of the buyer's sentences produced
+    that verdict", which is ground rule 1 — anything bidscout claims, Gabriel
+    can check from the same row it claimed it from.
+    """
+    with Store(args.db) as store:
+        stored = store.requirements(args.c_notice_id)
+        if not stored:
+            print(
+                f"Nothing stored for {args.c_notice_id}. Requirements are written when a "
+                "notice is scored, so run `bidscout score` first. An empty result here "
+                "does not mean the buyer asks for nothing.",
+                file=sys.stderr,
+            )
+            return 1
+        when = store.requirements_extracted_at(args.c_notice_id)
+        print(f"{args.c_notice_id} — read {when}\n")
+        for req in stored:
+            figure = f"{req.amount} {req.currency or ''}".strip() if req.amount else "no figure"
+            print(f"  {req.kind:<18} {figure:<22} [{req.confidence.value}] {req.source_field}")
+            print(f'      "{req.quote}"')
+    return 0
 
 
 def _cmd_eval(args: argparse.Namespace) -> int:

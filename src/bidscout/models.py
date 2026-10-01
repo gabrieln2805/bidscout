@@ -81,6 +81,10 @@ class Notice:
     published_at: str | None
     deadline_at: str | None
     notice_type_id: int | None
+    #: The portal's ``hasLots``. True means the tender is split into lots whose
+    #: own requirements bidscout has not read, so the notice-level figures may
+    #: belong to the whole tender and not to the lot you would actually bid for.
+    has_lots: bool = False
     raw: dict[str, Any] = field(repr=False, default_factory=dict)
 
     @property

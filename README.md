@@ -69,7 +69,16 @@ weights     -> a score from 0 to 100 for everything else
 ```
 
 A missing fact or an unreadable requirement produces **CHECK**, never NO-GO.
-That rule is held in place by `tests/test_unknown_never_becomes_no_go.py`.
+That rule is held in place by `tests/test_unknown_never_becomes_no_go.py`. A
+tender split into lots is held at CHECK for the same reason: the notice-level
+figure may be the total for every lot, and bidscout has not read the lots yet
+(`tests/test_a_multi_lot_tender_is_never_a_no_go.py`).
+
+Every figure the extractor reads is written to a `requirements` table with the
+buyer's sentence and the field it came from, so a verdict can be traced back
+without re-running the parser: `bidscout requirements <id>`. That table is
+derived — the stored raw Section 3 stays the only source of truth, and the
+scorer re-reads it on every run.
 
 ## Commands
 
@@ -77,12 +86,13 @@ That rule is held in place by `tests/test_unknown_never_becomes_no_go.py`.
 |---|---|---|
 | `bidscout score` | Rank stored tenders | no |
 | `bidscout explain <id>` | Every reason behind one verdict, with quotes | no |
+| `bidscout requirements <id>` | The sentences the last score read, with their field | no |
 | `bidscout stats` | What the database holds | no |
 | `bidscout eval` | Measure the extractor against the labelled cases | no |
 | `bidscout capture <id>` | Turn a stored Section 3 into a new case to label | no |
 | `bidscout watch --days 1` | Poll the portal and store what is new | **yes** |
 | `bidscout capture <id> --live` | Fetch a Section 3 and capture it | **yes** |
-| `make test` | 87 offline tests | no |
+| `make test` | 105 offline tests | no |
 | `make lint` | `ruff`, line length 100 | no |
 
 ## Layout

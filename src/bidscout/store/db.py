@@ -15,8 +15,8 @@ from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
-from bidscout.models import Notice, Section3, Verdict
-from bidscout.store.schema import SCHEMA
+from bidscout.models import Confidence, Notice, Requirement, Section3, Verdict
+from bidscout.store.schema import ADDED_COLUMNS, SCHEMA
 
 DEFAULT_DB_PATH = Path("data") / "bidscout.sqlite3"
 
@@ -35,7 +35,24 @@ class Store:
         self.connection = sqlite3.connect(self.path)
         self.connection.row_factory = sqlite3.Row
         self.connection.executescript(SCHEMA)
+        self._add_missing_columns()
         self.connection.commit()
+
+    def _add_missing_columns(self) -> None:
+        """Bring a database written by an older version up to today's columns.
+
+        ``CREATE TABLE IF NOT EXISTS`` does nothing to a table that already
+        exists, so a new column never reaches an existing file on its own and
+        the first query naming it fails with "no such column". Adding instead
+        of recreating is deliberate: ground rule 3 means no stored row is ever
+        thrown away to simplify a migration.
+        """
+        for table, column, ddl in ADDED_COLUMNS:
+            present = {
+                row["name"] for row in self.connection.execute(f"PRAGMA table_info({table})")
+            }
+            if present and column not in present:
+                self.connection.execute(f"ALTER TABLE {table} ADD COLUMN {ddl}")
 
     def close(self) -> None:
         self.connection.close()
@@ -60,16 +77,25 @@ class Store:
         ).fetchone()
         now = _now()
         if existing:
+            # ``has_lots`` is refreshed, unlike the other convenience columns,
+            # because it changes the verdict: a corrigendum that splits a tender
+            # into lots must not leave yesterday's GO standing on a figure that
+            # now belongs to the whole tender rather than to one lot.
             self.connection.execute(
-                "UPDATE notices SET last_seen = ?, raw = ? WHERE c_notice_id = ?",
-                (now, json.dumps(notice.raw, ensure_ascii=False), notice.c_notice_id),
+                "UPDATE notices SET last_seen = ?, raw = ?, has_lots = ? WHERE c_notice_id = ?",
+                (
+                    now,
+                    json.dumps(notice.raw, ensure_ascii=False),
+                    int(notice.has_lots),
+                    notice.c_notice_id,
+                ),
             )
         else:
             self.connection.execute(
                 """INSERT INTO notices (c_notice_id, notice_no, init_notice_id, title, buyer,
                        cpv, estimated_value_ron, published_at, deadline_at, notice_type_id,
-                       first_seen, last_seen, raw)
-                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                       has_lots, first_seen, last_seen, raw)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                 (
                     notice.c_notice_id,
                     notice.notice_no,
@@ -81,6 +107,7 @@ class Store:
                     notice.published_at,
                     notice.deadline_at,
                     notice.notice_type_id,
+                    int(notice.has_lots),
                     now,
                     now,
                     json.dumps(notice.raw, ensure_ascii=False),
@@ -124,6 +151,46 @@ class Store:
         )
         self.connection.commit()
         return cursor.rowcount
+
+    def save_requirements(self, c_notice_id: str, requirements: Iterable[Requirement]) -> int:
+        """Store what the extractor read, with the buyer's sentence beside it.
+
+        This is a trace, not a cache. The scorer still re-reads
+        ``sections.section3_raw`` on every run, so a fix to the extractor
+        applies immediately; these rows only answer "which sentences produced
+        the verdict I am looking at" without re-running the parser.
+
+        The rows for a notice are replaced, because a second extraction of the
+        same Section 3 supersedes the first. Nothing is lost by that: the raw
+        section it was read from is still on file (ground rule 3).
+
+        ``amount`` goes in as ``str``, never as a float. SQLite would store a
+        float and hand back 2699999.9999999995 for a sum the buyer wrote out
+        exactly.
+        """
+        self.connection.execute("DELETE FROM requirements WHERE c_notice_id = ?", (c_notice_id,))
+        now = _now()
+        rows = [
+            (
+                c_notice_id,
+                req.kind,
+                str(req.amount) if req.amount is not None else None,
+                req.currency,
+                req.quote,
+                req.source_field,
+                req.confidence.value,
+                now,
+            )
+            for req in requirements
+        ]
+        self.connection.executemany(
+            """INSERT INTO requirements (c_notice_id, kind, amount, currency, quote,
+                                         source_field, confidence, extracted_at)
+               VALUES (?,?,?,?,?,?,?,?)""",
+            rows,
+        )
+        self.connection.commit()
+        return len(rows)
 
     def save_verdict(self, c_notice_id: str, company: str, verdict: Verdict) -> None:
         """Store a verdict so the web page can read it without re-scoring."""
@@ -180,9 +247,42 @@ class Store:
             return None
         return Section3(init_notice_id=c_notice_id, raw=json.loads(row["section3_raw"]))
 
+    def requirements(self, c_notice_id: str) -> list[Requirement]:
+        """Return the stored requirements for one notice, newest extraction first.
+
+        An empty list means nobody has scored this notice yet, which is a
+        different thing from a buyer who asks for nothing. The caller is
+        expected to say which of the two it is rather than print "no
+        requirements" for both.
+        """
+        rows = self.connection.execute(
+            """SELECT kind, amount, currency, quote, source_field, confidence
+               FROM requirements WHERE c_notice_id = ? ORDER BY kind""",
+            (c_notice_id,),
+        ).fetchall()
+        return [
+            Requirement(
+                kind=row["kind"],
+                amount=Decimal(row["amount"]) if row["amount"] is not None else None,
+                currency=row["currency"],
+                quote=row["quote"],
+                source_field=row["source_field"],
+                confidence=Confidence(row["confidence"]),
+            )
+            for row in rows
+        ]
+
+    def requirements_extracted_at(self, c_notice_id: str) -> str | None:
+        """When these requirements were read, so a stale trace can be spotted."""
+        row = self.connection.execute(
+            "SELECT MAX(extracted_at) AS when_ FROM requirements WHERE c_notice_id = ?",
+            (c_notice_id,),
+        ).fetchone()
+        return row["when_"] if row else None
+
     def counts(self) -> dict[str, int]:
         """Row counts, for ``bidscout stats``."""
-        tables = ("notices", "buyers", "documents", "sections", "scores")
+        tables = ("notices", "buyers", "documents", "sections", "requirements", "scores")
         return {
             table: int(
                 self.connection.execute(f"SELECT COUNT(*) AS n FROM {table}").fetchone()["n"]
@@ -204,5 +304,6 @@ def _row_to_notice(row: sqlite3.Row) -> Notice:
         published_at=row["published_at"],
         deadline_at=row["deadline_at"],
         notice_type_id=row["notice_type_id"],
+        has_lots=bool(row["has_lots"]),
         raw=json.loads(row["raw"]),
     )
