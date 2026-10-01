@@ -31,7 +31,9 @@ def decide(
     for gate in rules.gates:
         requirement = by_kind.get(gate.kind)
         if requirement is None:
-            reasons.append(Reason(f"{gate.label}: the buyer does not ask for one."))
+            reasons.append(
+                Reason(f"{gate.label}: the buyer does not ask for one.", outcome=_ABSENT)
+            )
             continue
         outcome, reason = _check_gate(gate, requirement, profile)
         reasons.append(reason)
@@ -51,7 +53,8 @@ def decide(
             Reason(
                 "This tender is split into lots, and bidscout has not read them yet. "
                 "The figures above may be the total for all lots, not the lot you "
-                "would bid for. Open the lot list before deciding."
+                "would bid for. Open the lot list before deciding.",
+                outcome=_UNKNOWN,
             )
         )
         unresolved.append("the lots (not read yet)")
@@ -69,7 +72,9 @@ def decide(
     return Verdict(Decision.CHECK, score, reasons, unresolved)
 
 
-_PASS, _FAIL, _UNKNOWN = "pass", "fail", "unknown"
+#: What a gate did. ``ABSENT`` is not a failure: a requirement the buyer never
+#: states cannot be held against anybody.
+_PASS, _FAIL, _UNKNOWN, _ABSENT = "pass", "fail", "unknown", "absent"
 
 #: The currency every figure in ``profile.yaml`` is written in. A requirement in
 #: any other currency is not comparable without a rate bidscout cannot verify.
@@ -84,6 +89,7 @@ def _check_gate(gate: Any, requirement: Requirement, profile: dict[str, Any]) ->
             "Read the quote and decide by hand.",
             quote=requirement.quote,
             source_field=requirement.source_field,
+            outcome=_UNKNOWN,
         )
 
     # The profile is in lei. A threshold the buyer wrote in another currency
@@ -100,6 +106,7 @@ def _check_gate(gate: Any, requirement: Requirement, profile: dict[str, Any]) ->
             "one by hand before deciding.",
             quote=requirement.quote,
             source_field=requirement.source_field,
+            outcome=_UNKNOWN,
         )
 
     have = profile.get(gate.profile_key)
@@ -109,6 +116,7 @@ def _check_gate(gate: Any, requirement: Requirement, profile: dict[str, Any]) ->
             f"but {gate.profile_key} is not filled in your profile.",
             quote=requirement.quote,
             source_field=requirement.source_field,
+            outcome=_UNKNOWN,
         )
 
     have = Decimal(str(have))
@@ -118,12 +126,14 @@ def _check_gate(gate: Any, requirement: Requirement, profile: dict[str, Any]) ->
             f"you have {_money(have)}.",
             quote=requirement.quote,
             source_field=requirement.source_field,
+            outcome=_PASS,
         )
     return _FAIL, Reason(
         f"{gate.label}: the buyer asks for {_money(requirement.amount)}; "
         f"you have {_money(have)}.",
         quote=requirement.quote,
         source_field=requirement.source_field,
+        outcome=_FAIL,
     )
 
 

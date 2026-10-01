@@ -22,7 +22,9 @@ from bidscout.store.db import DEFAULT_DB_PATH, Store
 
 #: Commands that never open a socket. ``capture`` is offline too unless it is
 #: given ``--live``, so it is not in this set.
-OFFLINE_COMMANDS = frozenset({"score", "stats", "explain", "requirements", "eval"})
+OFFLINE_COMMANDS = frozenset(
+    {"score", "stats", "explain", "requirements", "eval", "export"}
+)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -48,6 +50,15 @@ def build_parser() -> argparse.ArgumentParser:
         help="show the sentences the last score read for one notice (no request to SEAP)",
     )
     requirements.add_argument("c_notice_id")
+
+    export = sub.add_parser(
+        "export",
+        help="write the scored database to a JSON file for the web page (no request to SEAP)",
+    )
+    export.add_argument(
+        "--out", default="docs/data.json", help="where to write the file the page reads"
+    )
+    export.add_argument("--cpv", help="primary CPV prefix, e.g. 72000000")
 
     sub.add_parser("stats", help="what the database holds")
 
@@ -82,6 +93,8 @@ def main(argv: list[str] | None = None) -> int:
         return _cmd_explain(args)
     if args.command == "requirements":
         return _cmd_requirements(args)
+    if args.command == "export":
+        return _cmd_export(args)
     if args.command == "watch":
         return _cmd_watch(args)
     if args.command == "eval":
@@ -143,7 +156,8 @@ def _cmd_explain(args: argparse.Namespace) -> int:
                 continue
             print(f"{verdict.decision.value}  score {verdict.score}\n{notice.title}\n")
             for reason in verdict.reasons:
-                print(f"  - {reason.text}")
+                mark = {"pass": "ok ", "fail": "NO ", "unknown": "?  ", "absent": "-  "}
+                print(f"  {mark.get(reason.outcome or '', '   ')}{reason.text}")
                 if reason.quote:
                     print(f'      "{reason.quote}"  [{reason.source_field}]')
             if verdict.unresolved:
@@ -177,6 +191,39 @@ def _cmd_requirements(args: argparse.Namespace) -> int:
             figure = f"{req.amount} {req.currency or ''}".strip() if req.amount else "no figure"
             print(f"  {req.kind:<18} {figure:<22} [{req.confidence.value}] {req.source_field}")
             print(f'      "{req.quote}"')
+    return 0
+
+
+def _cmd_export(args: argparse.Namespace) -> int:
+    """Write the file the static page reads.
+
+    The page is served by GitHub Pages, which runs no Python, so this is the
+    only way data reaches it. The payload carries its own provenance, and the
+    command says out loud whose figures it just wrote: committing an export
+    made from a real ``profile.yaml`` publishes those numbers.
+    """
+    from bidscout.export import build_payload, write_export  # noqa: PLC0415 - keeps cost local
+
+    profile, rules = _load(args)
+    with Store(args.db) as store:
+        payload = build_payload(
+            store,
+            profile,
+            rules,
+            cpv_prefix=args.cpv,
+            source={"database": args.db, "profile": args.profile, "rules": args.rules},
+        )
+        path = write_export(args.out, payload)
+
+    totals = payload["totals"]
+    print(
+        f"Wrote {path}: {totals['scored']} scored "
+        f"({totals['go']} GO, {totals['check']} CHECK, {totals['no_go']} NO-GO), "
+        f"{totals['skipped_unread']} skipped."
+    )
+    print(
+        f"It carries the company figures from {args.profile}. Committing it publishes them."
+    )
     return 0
 
 

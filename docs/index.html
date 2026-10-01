@@ -1,0 +1,789 @@
+<!doctype html>
+<!--
+  bidscout — the one page you send a link to.
+
+  A static page. No build step, no dependencies, no framework. It reads
+  ./data.json, which `bidscout export` writes from the scored database, and
+  renders it. GitHub Pages serves files and runs no Python, so the export is the
+  only way data reaches this page.
+
+  Two rules it must keep:
+
+  1. It never says more than the export can justify. Every verdict is shown with
+     the buyer's own sentence and the Section 3 field it came from, each gate is
+     marked with the outcome the engine computed (never by parsing the English),
+     and the notices nobody has read in full are listed rather than hidden.
+  2. Every string from the data is written with textContent, never innerHTML.
+     Titles and quotes come from a public portal; this page does not execute them.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>bidscout</title>
+<meta name="description" content="Should you bid? A decision aid for Romanian public tenders (SEAP / SICAP).">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=&apos;http://www.w3.org/2000/svg&apos; viewBox=&apos;0 0 32 32&apos;%3E%3Crect width=&apos;32&apos; height=&apos;32&apos; rx=&apos;7&apos; fill=&apos;%232a78d6&apos;/%3E%3Cpath d=&apos;M8 17l5 5 11-12&apos; fill=&apos;none&apos; stroke=&apos;white&apos; stroke-width=&apos;3.5&apos; stroke-linecap=&apos;round&apos; stroke-linejoin=&apos;round&apos;/%3E%3C/svg%3E">
+<style>
+  /* ---- tokens -------------------------------------------------------- */
+  :root {
+    color-scheme: light;
+    --plane: #f9f9f7;
+    --surface: #fcfcfb;
+    --ink: #0b0b0b;
+    --ink-2: #52514e;
+    --ink-muted: #898781;
+    --hairline: #e1e0d9;
+    --rule: #c3c2b7;
+    --ring: rgba(11, 11, 11, .10);
+    --meter: #2a78d6;
+    --meter-track: #e1e0d9;
+    --good: #0ca30c;
+    --warning: #fab219;
+    --critical: #d03b3b;
+    --good-wash: #e8f6e8;
+    --warning-wash: #fdf3dd;
+    --critical-wash: #fae8e8;
+    --shadow: 0 1px 2px rgba(11, 11, 11, .04), 0 1px 10px rgba(11, 11, 11, .03);
+    --radius: 10px;
+    --gutter: 16px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --plane: #0d0d0d;
+      --surface: #1a1a19;
+      --ink: #ffffff;
+      --ink-2: #c3c2b7;
+      --ink-muted: #898781;
+      --hairline: #2c2c2a;
+      --rule: #383835;
+      --ring: rgba(255, 255, 255, .10);
+      --meter: #3987e5;
+      --meter-track: #2c2c2a;
+      --good-wash: #10240f;
+      --warning-wash: #2b2310;
+      --critical-wash: #2a1414;
+      --shadow: none;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --plane: #0d0d0d;
+    --surface: #1a1a19;
+    --ink: #ffffff;
+    --ink-2: #c3c2b7;
+    --ink-muted: #898781;
+    --hairline: #2c2c2a;
+    --rule: #383835;
+    --ring: rgba(255, 255, 255, .10);
+    --meter: #3987e5;
+    --meter-track: #2c2c2a;
+    --good-wash: #10240f;
+    --warning-wash: #2b2310;
+    --critical-wash: #2a1414;
+    --shadow: none;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--plane);
+    color: var(--ink);
+    font: 15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  h1, h2, h3 { line-height: 1.25; margin: 0; font-weight: 600; }
+  a { color: inherit; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 var(--gutter); }
+
+  /* ---- header -------------------------------------------------------- */
+  header { border-bottom: 1px solid var(--hairline); background: var(--surface); }
+  .masthead { display: flex; align-items: flex-start; gap: 20px; padding: 28px 0 22px; flex-wrap: wrap; }
+  .brand { flex: 1 1 320px; min-width: 0; }
+  .brand h1 { font-size: 24px; letter-spacing: -.01em; }
+  .brand h1 .dot { color: var(--meter); }
+  .tagline { margin: 6px 0 0; color: var(--ink-2); max-width: 62ch; }
+  .masthead-side { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+  .btn {
+    font: inherit; font-size: 13px; color: var(--ink-2);
+    background: var(--surface); border: 1px solid var(--rule);
+    border-radius: 999px; padding: 6px 13px; cursor: pointer;
+    text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn:hover { color: var(--ink); border-color: var(--ink-muted); }
+  .btn:focus-visible { outline: 2px solid var(--meter); outline-offset: 2px; }
+
+  /* ---- provenance ---------------------------------------------------- */
+  .provenance {
+    display: flex; flex-wrap: wrap; gap: 6px 18px;
+    padding: 0 0 20px; font-size: 12.5px; color: var(--ink-muted);
+  }
+  .provenance b { font-weight: 500; color: var(--ink-2); }
+  .provenance code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11.5px; color: var(--ink-2);
+  }
+
+  /* ---- KPI row ------------------------------------------------------- */
+  .kpis {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+    gap: 10px; margin: 22px 0 0;
+  }
+  .kpi {
+    background: var(--surface); border: 1px solid var(--ring);
+    border-radius: var(--radius); padding: 13px 15px; box-shadow: var(--shadow);
+  }
+  .kpi .v { font-size: 26px; font-weight: 600; letter-spacing: -.02em; display: block; }
+  .kpi .k { font-size: 12px; color: var(--ink-2); display: flex; align-items: center; gap: 6px; }
+  .swatch { width: 9px; height: 9px; border-radius: 2px; flex: none; }
+
+  /* ---- layout -------------------------------------------------------- */
+  main { padding: 26px 0 60px; }
+  .cols { display: grid; grid-template-columns: 290px minmax(0, 1fr); gap: 26px; align-items: start; }
+  @media (max-width: 860px) { .cols { grid-template-columns: 1fr; gap: 20px; } }
+
+  .rail { display: grid; gap: 14px; position: sticky; top: 18px; }
+  @media (max-width: 860px) { .rail { position: static; } }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--ring);
+    border-radius: var(--radius); box-shadow: var(--shadow);
+  }
+  .card > h2 {
+    font-size: 11px; text-transform: uppercase; letter-spacing: .07em;
+    color: var(--ink-muted); padding: 14px 15px 0; font-weight: 600;
+  }
+  .card-body h2 {
+    font-size: 11px; text-transform: uppercase; letter-spacing: .07em;
+    color: var(--ink-muted); font-weight: 600; margin: 16px 0 0;
+  }
+  .card-body { padding: 11px 15px 15px; }
+
+  .company-name { font-size: 17px; font-weight: 600; margin: 2px 0 1px; }
+  .company-sub { font-size: 12.5px; color: var(--ink-muted); font-family: ui-monospace, Menlo, monospace; }
+
+  dl.figures { margin: 13px 0 0; display: grid; gap: 1px; }
+  dl.figures > div {
+    display: flex; justify-content: space-between; gap: 12px;
+    padding: 6px 0; border-top: 1px solid var(--hairline); font-size: 13px;
+  }
+  dl.figures dt { color: var(--ink-2); min-width: 0; }
+  dl.figures dd { margin: 0; font-variant-numeric: tabular-nums; white-space: nowrap; font-weight: 500; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 11px; }
+  .chip {
+    font-size: 11.5px; padding: 2.5px 8px; border-radius: 999px;
+    border: 1px solid var(--hairline); color: var(--ink-2);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .gate-row {
+    display: flex; justify-content: space-between; gap: 10px; align-items: baseline;
+    padding: 7px 0; border-top: 1px solid var(--hairline); font-size: 13px;
+  }
+  .gate-row:first-child { border-top: 0; }
+  .gate-row code { font-size: 11px; color: var(--ink-muted); font-family: ui-monospace, Menlo, monospace; }
+  .weights { margin-top: 12px; }
+  .weight { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; font-size: 12.5px; padding-top: 7px; }
+  .weight .bar { grid-column: 1 / -1; height: 4px; background: var(--meter-track); border-radius: 4px; overflow: hidden; }
+  .weight .bar i { display: block; height: 100%; background: var(--meter); border-radius: 4px; }
+  .weight span:nth-child(2) { color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+
+  /* ---- tender list --------------------------------------------------- */
+  .list-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 12px; margin: 0 2px 11px; flex-wrap: wrap;
+  }
+  .list-head h2 { font-size: 15px; }
+  .list-head p { margin: 0; font-size: 12.5px; color: var(--ink-muted); }
+
+  .tenders { display: grid; gap: 10px; }
+  .tender {
+    background: var(--surface); border: 1px solid var(--ring);
+    border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden;
+  }
+  .tender.is-open { border-color: var(--ink-muted); }
+
+  .tender-head {
+    display: grid; grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 6px 14px; align-items: start;
+    width: 100%; text-align: left; background: none; border: 0;
+    font: inherit; color: inherit; cursor: pointer; padding: 14px 15px;
+  }
+  .tender-head:hover { background: color-mix(in srgb, var(--ink) 3%, transparent); }
+  .tender-head:focus-visible { outline: 2px solid var(--meter); outline-offset: -2px; }
+
+  .verdict {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11.5px; font-weight: 600; letter-spacing: .03em;
+    padding: 4px 9px; border-radius: 6px; white-space: nowrap;
+    border: 1px solid transparent; color: var(--ink);
+  }
+  .verdict .glyph { font-size: 11px; line-height: 1; }
+  .v-GO     { background: var(--good-wash);     border-color: var(--good); }
+  .v-CHECK  { background: var(--warning-wash);  border-color: var(--warning); }
+  .v-NOGO   { background: var(--critical-wash); border-color: var(--critical); }
+
+  .tender-title { font-weight: 500; margin: 0; overflow-wrap: anywhere; }
+  .tender-meta {
+    grid-column: 2; display: flex; flex-wrap: wrap; gap: 3px 14px;
+    font-size: 12.5px; color: var(--ink-muted); margin-top: 3px;
+  }
+  .tender-meta .num { font-variant-numeric: tabular-nums; color: var(--ink-2); }
+  .badge {
+    font-size: 11px; padding: 1.5px 7px; border-radius: 999px;
+    border: 1px solid var(--warning); background: var(--warning-wash); color: var(--ink);
+  }
+
+  .scorebox { text-align: right; min-width: 74px; }
+  .scorebox .n { font-size: 19px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+  .scorebox .of { font-size: 11px; color: var(--ink-muted); }
+  .meter {
+    position: relative; height: 4px; margin-top: 5px;
+    background: var(--meter-track); border-radius: 4px; overflow: hidden;
+  }
+  .meter i { position: absolute; inset: 0 auto 0 0; background: var(--meter); border-radius: 4px; }
+  .meter .tick { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--rule); border-radius: 2px; }
+
+  @media (max-width: 560px) {
+    .tender-head { grid-template-columns: auto minmax(0, 1fr); }
+    .scorebox { grid-column: 2; text-align: left; margin-top: 8px; }
+    .meter { max-width: 160px; }
+  }
+
+  /* ---- detail -------------------------------------------------------- */
+  .detail { border-top: 1px solid var(--hairline); padding: 4px 15px 16px; }
+  .detail h3 {
+    font-size: 11px; text-transform: uppercase; letter-spacing: .07em;
+    color: var(--ink-muted); margin: 16px 0 8px;
+  }
+  .reason { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 3px 10px; padding: 9px 0; border-top: 1px solid var(--hairline); }
+  .reason:first-of-type { border-top: 0; }
+  .outcome {
+    width: 18px; height: 18px; border-radius: 5px; display: grid; place-items: center;
+    font-size: 11px; font-weight: 700; flex: none; margin-top: 1px;
+    border: 1px solid var(--rule); color: var(--ink-2);
+  }
+  .o-pass    { background: var(--good-wash);     border-color: var(--good); }
+  .o-fail    { background: var(--critical-wash); border-color: var(--critical); }
+  .o-unknown { background: var(--warning-wash);  border-color: var(--warning); }
+  .reason p { margin: 0; font-size: 13.5px; }
+  blockquote {
+    grid-column: 2; margin: 5px 0 0; padding: 8px 11px;
+    border-left: 2px solid var(--rule); background: var(--plane);
+    border-radius: 0 6px 6px 0; font-size: 13px; color: var(--ink-2);
+    overflow-wrap: anywhere;
+  }
+  blockquote cite {
+    display: block; margin-top: 5px; font-style: normal; font-size: 11px;
+    color: var(--ink-muted); font-family: ui-monospace, Menlo, monospace;
+  }
+
+  .note {
+    font-size: 13px; color: var(--ink-2); background: var(--warning-wash);
+    border: 1px solid var(--warning); border-radius: 8px; padding: 9px 12px; margin: 12px 0 0;
+  }
+
+  /* min-width so a narrow screen scrolls the table sideways instead of
+     crushing four columns into unreadable slivers. */
+  table.reqs { width: 100%; min-width: 460px; border-collapse: collapse; font-size: 13px; }
+  table.reqs th {
+    text-align: left; font-weight: 500; font-size: 11px; text-transform: uppercase;
+    letter-spacing: .06em; color: var(--ink-muted); padding: 0 10px 6px 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  table.reqs td { padding: 8px 10px 8px 0; border-bottom: 1px solid var(--hairline); vertical-align: top; }
+  table.reqs td.amount { font-variant-numeric: tabular-nums; white-space: nowrap; font-weight: 500; }
+  table.reqs td.field { font-family: ui-monospace, Menlo, monospace; font-size: 11px; color: var(--ink-muted); }
+  .reqs-scroll { overflow-x: auto; }
+
+  /* ---- skipped & footer ---------------------------------------------- */
+  .skipped li { font-size: 13px; padding: 7px 0; border-top: 1px solid var(--hairline); }
+  .skipped li:first-child { border-top: 0; }
+  .skipped ul { list-style: none; margin: 0; padding: 0; }
+  .skipped .num { font-variant-numeric: tabular-nums; color: var(--ink-2); }
+
+  footer { border-top: 1px solid var(--hairline); background: var(--surface); padding: 26px 0 40px; }
+  footer h2 { font-size: 13px; margin-bottom: 10px; }
+  footer ol { margin: 0; padding-left: 20px; color: var(--ink-2); font-size: 13px; }
+  footer li { margin-bottom: 6px; }
+  footer .small { margin-top: 18px; font-size: 12px; color: var(--ink-muted); }
+
+  .empty { padding: 40px 16px; text-align: center; color: var(--ink-2); }
+  .empty code {
+    display: inline-block; margin-top: 10px; padding: 7px 11px;
+    background: var(--plane); border: 1px solid var(--hairline); border-radius: 6px;
+    font-family: ui-monospace, Menlo, monospace; font-size: 12.5px; color: var(--ink);
+  }
+  .visually-hidden {
+    position: absolute; width: 1px; height: 1px; overflow: hidden;
+    clip: rect(0 0 0 0); white-space: nowrap;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="masthead">
+      <div class="brand">
+        <h1>bidscout<span class="dot">.</span></h1>
+        <p class="tagline">
+          Romanian public tenders (SEAP&nbsp;/&nbsp;SICAP), read against one company,
+          answering one question: <strong>should you bid?</strong>
+          Every figure below is shown with the buyer's own sentence and the field it was read from.
+        </p>
+      </div>
+      <div class="masthead-side">
+        <button class="btn" id="theme" type="button" aria-pressed="false">
+          <span aria-hidden="true">◐</span> Theme
+        </button>
+        <a class="btn" href="https://github.com/gabrieln2805/bidscout">Source</a>
+      </div>
+    </div>
+    <div class="provenance" id="provenance"></div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="kpis" id="kpis"></div>
+
+  <div class="cols">
+    <aside class="rail" id="rail"></aside>
+
+    <section>
+      <div class="list-head">
+        <h2>Tenders, strongest first</h2>
+        <p id="list-note"></p>
+      </div>
+      <div class="tenders" id="tenders"></div>
+      <div id="skipped"></div>
+    </section>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <h2>The rules this tool holds itself to</h2>
+    <ol>
+      <li><strong>Anything it checks, you must be able to check.</strong> Every claim on this
+        page is reproduced by a command in the repository, not asserted in a document.</li>
+      <li><strong>"We could not tell" never becomes "you do not qualify".</strong> A missing
+        figure, an unreadable sentence, a sum in another currency or a tender split into
+        lots produces CHECK. Only a gate where both numbers are known and they do not meet
+        can produce NO-GO.</li>
+      <li><strong>The raw data is kept for ever.</strong> A parser rewrite is replayed from
+        stored payloads, never by polling the portal again.</li>
+      <li><strong>The repository is the project.</strong> Work that is not in it does not exist.</li>
+    </ol>
+    <p class="small" id="footnote"></p>
+  </div>
+</footer>
+
+<script>
+(() => {
+  "use strict";
+
+  /* ---------------------------------------------------------------- theme */
+  const root = document.documentElement;
+  const toggle = document.getElementById("theme");
+  const stored = (() => {
+    // A per-viewer convenience only. It can throw in a private window, and the
+    // page must render correctly when it does.
+    try { return localStorage.getItem("bidscout-theme"); } catch { return null; }
+  })();
+  if (stored === "dark" || stored === "light") root.dataset.theme = stored;
+  const syncToggle = () => {
+    const dark = root.dataset.theme
+      ? root.dataset.theme === "dark"
+      : matchMedia("(prefers-color-scheme: dark)").matches;
+    toggle.setAttribute("aria-pressed", String(dark));
+  };
+  syncToggle();
+  toggle.addEventListener("click", () => {
+    const dark = root.dataset.theme
+      ? root.dataset.theme === "dark"
+      : matchMedia("(prefers-color-scheme: dark)").matches;
+    root.dataset.theme = dark ? "light" : "dark";
+    try { localStorage.setItem("bidscout-theme", root.dataset.theme); } catch { /* ignore */ }
+    syncToggle();
+  });
+
+  /* ------------------------------------------------------------- helpers */
+  // Everything that reaches the DOM goes through here. The data comes from a
+  // public portal, so no string from it is ever written as HTML.
+  const el = (tag, cls, text) => {
+    const node = document.createElement(tag);
+    if (cls) node.className = cls;
+    if (text !== undefined && text !== null) node.textContent = String(text);
+    return node;
+  };
+
+  const SCHEMA = 1;
+
+  // Romanian grouping: 2700000 -> "2.700.000". The export hands us an exact
+  // string, so it is grouped as text and never put through a float.
+  const group = (digits) => digits.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  const money = (value, currency) => {
+    if (value === null || value === undefined || value === "") return "—";
+    const [whole] = String(value).split(".");
+    return `${group(whole)} ${currency || "RON"}`;
+  };
+  const day = (iso) => {
+    if (!iso) return "—";
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) return iso;
+    return date.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+  };
+  const daysLeft = (iso) => {
+    if (!iso) return null;
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) return null;
+    return Math.round((date - Date.now()) / 86400000);
+  };
+  const prettyKey = (key) =>
+    key.replace(/_ron$/, "").replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase());
+
+  const VERDICT = {
+    "GO": { cls: "v-GO", glyph: "✓" },
+    "CHECK": { cls: "v-CHECK", glyph: "?" },
+    "NO-GO": { cls: "v-NOGO", glyph: "✕" },
+  };
+  const OUTCOME = {
+    pass: { cls: "o-pass", glyph: "✓", label: "met" },
+    fail: { cls: "o-fail", glyph: "✕", label: "not met" },
+    unknown: { cls: "o-unknown", glyph: "?", label: "could not be measured" },
+    absent: { cls: "", glyph: "–", label: "not asked for" },
+  };
+
+  const verdictChip = (decision) => {
+    const spec = VERDICT[decision] || { cls: "", glyph: "·" };
+    const chip = el("span", `verdict ${spec.cls}`);
+    chip.append(el("span", "glyph", spec.glyph), el("span", null, decision));
+    return chip;
+  };
+
+  /* --------------------------------------------------------- provenance */
+  const renderProvenance = (data) => {
+    const box = document.getElementById("provenance");
+    const add = (label, value, mono) => {
+      const item = el("span");
+      item.append(el("b", null, label + " "));
+      item.append(el(mono ? "code" : "span", null, value));
+      box.append(item);
+    };
+    add("Scored", day(data.generated_at));
+    if (data.source && data.source.database) add("from", data.source.database, true);
+    if (data.source && data.source.profile) add("against", data.source.profile, true);
+    if (data.source && data.source.rules) add("rules", data.source.rules, true);
+    add("bidscout", "v" + (data.bidscout_version || "?"));
+  };
+
+  /* --------------------------------------------------------------- KPIs */
+  const renderKpis = (totals) => {
+    const box = document.getElementById("kpis");
+    const cells = [
+      ["Scored", totals.scored, null],
+      ["GO", totals.go, "var(--good)"],
+      ["CHECK", totals.check, "var(--warning)"],
+      ["NO-GO", totals.no_go, "var(--critical)"],
+      ["Not read in full", totals.skipped_unread, "var(--ink-muted)"],
+    ];
+    for (const [label, value, color] of cells) {
+      const card = el("div", "kpi");
+      card.append(el("span", "v", value));
+      const key = el("span", "k");
+      if (color) {
+        const swatch = el("span", "swatch");
+        swatch.style.background = color;
+        key.append(swatch);
+      }
+      key.append(el("span", null, label));
+      card.append(key);
+      box.append(card);
+    }
+  };
+
+  /* --------------------------------------------------------------- rail */
+  const renderRail = (data) => {
+    const rail = document.getElementById("rail");
+    const company = data.company || {};
+
+    const who = el("div", "card");
+    who.append(el("h2", null, "The company"));
+    const whoBody = el("div", "card-body");
+    whoBody.append(el("div", "company-name", company.company_name || "—"));
+    if (company.cui) whoBody.append(el("div", "company-sub", company.cui));
+
+    const figures = el("dl", "figures");
+    for (const [key, value] of Object.entries(company)) {
+      if (!key.endsWith("_ron")) continue;
+      const row = el("div");
+      row.append(el("dt", null, prettyKey(key)), el("dd", null, money(value)));
+      figures.append(row);
+    }
+    if (figures.childElementCount) whoBody.append(figures);
+
+    const lists = [["cpv_watchlist", "CPV watchlist"], ["counties", "Counties"],
+                   ["certifications", "Certifications"]];
+    for (const [key, label] of lists) {
+      const values = company[key];
+      if (!Array.isArray(values) || !values.length) continue;
+      whoBody.append(el("h2", null, label));
+      const chips = el("div", "chips");
+      for (const value of values) chips.append(el("span", "chip", value));
+      whoBody.append(chips);
+    }
+    who.append(whoBody);
+    rail.append(who);
+
+    const rules = data.rules || {};
+    const card = el("div", "card");
+    card.append(el("h2", null, "Hard gates · " + (rules.name || "")));
+    const body = el("div", "card-body");
+    for (const gate of rules.gates || []) {
+      const row = el("div", "gate-row");
+      row.append(el("span", null, gate.label), el("code", null, gate.profile_key));
+      body.append(row);
+    }
+    const note = el("p", "note",
+      "A gate can only produce NO-GO when both numbers are known. Anything else is CHECK.");
+    body.append(note);
+
+    const weights = rules.weights || {};
+    const max = Math.max(1, ...Object.values(weights));
+    const wrap = el("div", "weights");
+    wrap.append(el("h2", null, `Score weights · GO at ${rules.go_threshold ?? "?"}`));
+    for (const [key, weight] of Object.entries(weights)) {
+      const row = el("div", "weight");
+      row.append(el("span", null, prettyKey(key)), el("span", null, weight));
+      const bar = el("div", "bar");
+      const fill = el("i");
+      fill.style.width = `${(weight / max) * 100}%`;
+      bar.append(fill);
+      row.append(bar);
+      wrap.append(row);
+    }
+    body.append(wrap);
+    card.append(body);
+    rail.append(card);
+  };
+
+  /* ------------------------------------------------------------ tenders */
+  // Which requirement kinds are hard gates, read from the rule set in the data
+  // rather than hard-coded here. A gate's quote is shown under "Why"; the rest
+  // are quoted in the table.
+  let gateKinds = new Set();
+
+  const renderDetail = (tender) => {
+    const detail = el("div", "detail");
+
+    detail.append(el("h3", null, "Why"));
+    for (const reason of tender.reasons || []) {
+      const spec = OUTCOME[reason.outcome] || { cls: "", glyph: "·", label: "" };
+      const row = el("div", "reason");
+      const mark = el("span", `outcome ${spec.cls}`, spec.glyph);
+      mark.title = spec.label;
+      row.append(mark, el("p", null, reason.text));
+      if (reason.quote) {
+        const quote = el("blockquote", null, "“" + reason.quote + "”");
+        if (reason.source_field) quote.append(el("cite", null, reason.source_field));
+        row.append(quote);
+      }
+      detail.append(row);
+    }
+
+    if ((tender.unresolved || []).length) {
+      detail.append(el("p", "note",
+        "Needs your judgement before this verdict means anything: " +
+        tender.unresolved.join("; ") + "."));
+    }
+
+    const reqs = tender.requirements || [];
+    if (reqs.length) {
+      detail.append(el("h3", null, "What the reader found in Section 3"));
+      const scroll = el("div", "reqs-scroll");
+      const table = el("table", "reqs");
+      const headRow = el("tr");
+      for (const label of ["Requirement", "Figure", "How it was read", "Field"]) {
+        headRow.append(el("th", null, label));
+      }
+      const thead = el("thead");
+      thead.append(headRow);
+      table.append(thead);
+      const body = el("tbody");
+      for (const req of reqs) {
+        const row = el("tr");
+        row.append(el("td", null, prettyKey(req.kind)));
+        row.append(el("td", "amount", req.amount ? money(req.amount, req.currency) : "no figure"));
+        // This column says what was read, not what was decided. "High
+        // confidence" on a kind that carries no figure only means the text was
+        // found, and a sum in euro was deliberately not compared to anything,
+        // so neither may be described as measured.
+        row.append(el("td", null,
+          !req.amount ? "text only, no figure to measure"
+            : req.currency && req.currency !== "RON"
+              ? `a figure in ${req.currency} — bidscout does not convert`
+            : req.confidence === "high" ? "a figure, read in lei"
+            : "a figure, but not reliably readable"));
+        row.append(el("td", "field", req.source_field || ""));
+        body.append(row);
+        // A gate's sentence is already quoted under "Why" just above. Only the
+        // requirements that are not gates need their quote shown here, so the
+        // evidence is complete without being printed twice.
+        if (!gateKinds.has(req.kind)) {
+          const quoteRow = el("tr");
+          const cell = el("td");
+          cell.colSpan = 4;
+          cell.append(el("blockquote", null, "“" + req.quote + "”"));
+          quoteRow.append(cell);
+          body.append(quoteRow);
+        }
+      }
+      table.append(body);
+      scroll.append(table);
+      detail.append(scroll);
+    }
+    return detail;
+  };
+
+  const renderTender = (tender, open) => {
+    const card = el("article", "tender" + (open ? " is-open" : ""));
+
+    const head = el("button", "tender-head");
+    head.type = "button";
+    head.setAttribute("aria-expanded", String(open));
+
+    head.append(verdictChip(tender.decision));
+
+    const middle = el("div");
+    middle.append(el("h3", "tender-title", tender.title || tender.notice_no));
+    head.append(middle);
+
+    const score = el("div", "scorebox");
+    const n = el("div");
+    n.append(el("span", "n", tender.score), el("span", "of", " / 100"));
+    score.append(n);
+    const meter = el("div", "meter");
+    const fill = el("i");
+    fill.style.width = `${Math.max(0, Math.min(100, tender.score))}%`;
+    meter.append(fill);
+    const tick = el("span", "tick");
+    tick.style.left = `${window.__goThreshold ?? 60}%`;
+    tick.title = "GO threshold";
+    meter.append(tick);
+    score.append(meter);
+    head.append(score);
+
+    const meta = el("div", "tender-meta");
+    const push = (text, cls) => meta.append(el("span", cls || null, text));
+    push(tender.notice_no, "num");
+    if (tender.buyer) push(tender.buyer);
+    if (tender.estimated_value_ron) push(money(tender.estimated_value_ron), "num");
+    const left = daysLeft(tender.deadline_at);
+    if (left !== null) {
+      push(left >= 0 ? `${left} days left · ${day(tender.deadline_at)}`
+                     : `closed ${day(tender.deadline_at)}`, "num");
+    }
+    if (tender.has_lots) push("split into lots", "badge");
+    if (tender.is_simplified) push("simplified notice", "badge");
+    head.append(meta);
+
+    card.append(head);
+    const detail = renderDetail(tender);
+    detail.hidden = !open;
+    card.append(detail);
+
+    head.addEventListener("click", () => {
+      const next = detail.hidden;
+      detail.hidden = !next;
+      head.setAttribute("aria-expanded", String(next));
+      card.classList.toggle("is-open", next);
+    });
+    return card;
+  };
+
+  const renderSkipped = (skipped) => {
+    const box = document.getElementById("skipped");
+    if (!skipped || !skipped.length) return;
+    const card = el("div", "card skipped");
+    card.style.marginTop = "22px";
+    card.append(el("h2", null, `Not read in full — ${skipped.length} skipped, not scored`));
+    const body = el("div", "card-body");
+    body.append(el("p", "note",
+      "Section 3 has not been fetched for these, so bidscout has not read their " +
+      "requirements. They are counted and listed rather than scored: a notice with " +
+      "nothing on file would otherwise look like a notice that asks for nothing, " +
+      "and come out GO."));
+    const list = el("ul");
+    for (const notice of skipped) {
+      const item = el("li");
+      item.append(el("span", "num", notice.notice_no + "  "));
+      item.append(el("span", null, notice.title || ""));
+      list.append(item);
+    }
+    body.append(list);
+    card.append(body);
+    box.append(card);
+  };
+
+  /* ---------------------------------------------------------------- boot */
+  const fail = (title, detail, command) => {
+    const box = document.getElementById("tenders");
+    const empty = el("div", "empty");
+    empty.append(el("h2", null, title));
+    empty.append(el("p", null, detail));
+    if (command) empty.append(el("code", null, command));
+    box.append(empty);
+  };
+
+  fetch("./data.json", { cache: "no-cache" })
+    .then((response) => {
+      if (!response.ok) throw new Error(`data.json responded ${response.status}`);
+      return response.json();
+    })
+    .then((data) => {
+      if (data.schema !== SCHEMA) {
+        fail("This page cannot read that data file",
+             `It is schema ${data.schema}; this page reads schema ${SCHEMA}. ` +
+             "Regenerate it with the matching version of bidscout.");
+        return;
+      }
+      window.__goThreshold = (data.rules && data.rules.go_threshold) ?? 60;
+      gateKinds = new Set(((data.rules && data.rules.gates) || []).map((g) => g.kind));
+      renderProvenance(data);
+      renderKpis(data.totals || {});
+      renderRail(data);
+
+      const tenders = data.tenders || [];
+      document.getElementById("list-note").textContent =
+        `${tenders.length} scored · click one for the reasoning`;
+      const box = document.getElementById("tenders");
+      if (!tenders.length) {
+        fail("Nothing scored yet",
+             "The database holds no notice with a stored Section 3.",
+             "bidscout score");
+      } else {
+        tenders.forEach((tender, index) => box.append(renderTender(tender, index === 0)));
+      }
+      renderSkipped(data.skipped);
+
+      document.getElementById("footnote").textContent =
+        `Figures shown are those in ${(data.source && data.source.profile) || "the profile"}, ` +
+        `scored from ${(data.source && data.source.database) || "the database"} on ` +
+        `${day(data.generated_at)}. Regenerate this page's data with \`bidscout export\`. ` +
+        "bidscout is a decision aid; it is not legal advice and it submits nothing for you.";
+    })
+    .catch((error) => {
+      // The usual cause is opening the file directly: a browser will not fetch
+      // ./data.json over file://. Say that instead of showing a blank page.
+      fail("Could not load data.json",
+           `${error.message}. If you opened this file directly, serve the folder ` +
+           "over HTTP instead — a browser blocks fetch() on file:// URLs.",
+           "python -m http.server --directory docs 8000");
+    });
+})();
+</script>
+</body>
+</html>
