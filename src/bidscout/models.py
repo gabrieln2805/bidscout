@@ -95,11 +95,18 @@ class Notice:
 
 @dataclass(frozen=True)
 class Reason:
-    """One line of the explanation behind a verdict."""
+    """One line of the explanation behind a verdict.
+
+    ``outcome`` is what the gate did: ``pass``, ``fail``, ``unknown`` (we could
+    not measure it) or ``absent`` (the buyer does not ask for it). It is carried
+    rather than recomputed so that a reader — a person, the CLI or the web page
+    — never has to infer a gate's state by parsing the English in ``text``.
+    """
 
     text: str
     quote: str | None = None
     source_field: str | None = None
+    outcome: str | None = None
 
 
 @dataclass

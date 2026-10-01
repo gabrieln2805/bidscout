@@ -209,7 +209,12 @@ class Store:
                 verdict.score,
                 json.dumps(
                     [
-                        {"text": r.text, "quote": r.quote, "source_field": r.source_field}
+                        {
+                            "text": r.text,
+                            "quote": r.quote,
+                            "source_field": r.source_field,
+                            "outcome": r.outcome,
+                        }
                         for r in verdict.reasons
                     ],
                     ensure_ascii=False,

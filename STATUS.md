@@ -57,11 +57,11 @@ Two goals, in order:
 | Measuring how well we read | Working, on 3 labelled notices | `make eval` + 17 tests |
 | The command line | Working offline | 11 offline tests |
 | Writing the bid documents | Not started | — |
-| A web page anyone can look at | Not started | — |
+| A web page anyone can look at | Working, published from `docs/` | `make site` + 11 offline tests |
 | Direct purchases | Mapped, not wired in | — |
 | Reading the PDFs (the other 40%) | Not started | — |
 
-**105 automatic tests, all offline, all passing.** `ruff` clean at line
+**123 automatic tests, all offline, all passing.** `ruff` clean at line
 length 100.
 
 ---
@@ -81,6 +81,10 @@ make install && make demo
 - **Watch the portal** — polls a publication window and stores what is new.
   *Written but not yet run against the live portal.*
 - **See what the database holds** — `bidscout stats`.
+- **Show it to somebody** — one static page, `docs/index.html`, built by
+  `bidscout export` from the scored database. Your company on the left, the
+  tenders ranked on the right, click one for the buyer's own sentences. No
+  build step and no framework; GitHub Pages serves it from `/docs`.
 - **Measure how well it reads** — `bidscout eval` prints, per gate, how
   often a figure is found and how often it is right, against notices
   labelled by hand in `eval/cases/`. `bidscout capture <id>` turns a
@@ -117,6 +121,16 @@ after the behaviour it defends.
   invention can push a verdict to NO-GO on a number nobody wrote.
 - A label amount written as an unquoted JSON number is refused, because
   `json` reads it as a float and it is then not the number that was typed.
+- A requirement the buyer stated in **another currency** is never compared to
+  a profile in lei. The rate that applies is the one on the notice's own date,
+  which bidscout cannot verify, so it is CHECK and the reason names the
+  currency the buyer actually wrote. *(1 October 2026.)*
+- **No amount on the published page has been through a float.** Every figure in
+  `docs/data.json` is a string, and the exporter refuses a float rather than
+  publishing a rounded gate.
+- **The page never reads the English to decide anything.** Each gate is marked
+  from the `outcome` the engine computed, and every string from the portal
+  reaches the DOM through `textContent`, never as markup.
 - A tender **split into lots** is never a NO-GO. The notice-level turnover or
   experience figure may be the total for every lot, while you would bid for
   one, so the verdict is held at CHECK and the lots are listed as unresolved.
@@ -200,9 +214,13 @@ looks at. A pretty page over a parser nobody has measured is worth nothing.
    endpoint is still unknown, so the model and the skip-and-count path can
    be built now and wired when the endpoint is found.
 
-7. **A web page.** One page: your company on the left, today's tenders ranked
-   on the right, click one to see why. This is the thing you send a link to.
-   The original mockup was lost, so this needs a fresh design.
+7. ~~**A web page.** One page: your company on the left, today's tenders ranked
+   on the right, click one to see why. This is the thing you send a link to.~~
+   **Done 1 October 2026.** `docs/index.html`, one static file, no build step,
+   reading `docs/data.json` from the new `bidscout export`. Turn it on at
+   Settings → Pages → Deploy from a branch → `main` / `/docs`. It currently
+   shows the demo fixtures scored against `profile.example.yaml`; it will show
+   real tenders as soon as step 1 and step 4 have filled a database.
 
 8. **The document checklist and the questions.** For a GO tender: what you
    must produce, by when, and which questions are worth asking the buyer.
@@ -423,3 +441,65 @@ Next session starts at **immediate step 1** (live re-verify, Gabriel's
 machine). After that, either the secondary-CPV field and the lot list — both
 unblocked by the same live look — or **step 4**, `bidscout fetch`, which is the
 piece that stops the database filling with notices the scorer then skips.
+
+### Session 6 — 1 October 2026 (cloud, no portal access)
+
+Gabriel asked for a front end he can put on GitHub Pages, before applying the
+session 5 patch. Pages serves files and runs no Python, and the portal sends no
+CORS headers, so the page cannot query the database or call SEAP. The seam is a
+new command.
+
+**`bidscout export`** (`src/bidscout/export.py`) scores the database offline and
+writes one JSON file: the company, the rule set, the ranked tenders with their
+reasons, quotes, source fields and requirement traces, the notices nobody has
+read in full, and the file's own provenance — which database, which profile,
+which rules, when, which version. Every amount is a string. The exporter refuses
+a float outright, and a test walks the whole round-tripped payload to prove no
+number in it is a float, so a figure added carelessly later fails the suite
+rather than quietly rounding a hard gate on a public page.
+
+**`docs/index.html`** is the page: one static file, no build step, no framework,
+no dependency. Company and rules on the left, tenders ranked on the right, click
+one for the buyer's own sentences with the Section 3 field beside each. It shows
+the skipped notices rather than hiding them, and the footer states the four
+ground rules. `make site` rebuilds it end to end; `make serve` shows it exactly
+as Pages will. Light and dark, checked at 1280px and at phone width in a real
+browser.
+
+Two things the page is not allowed to do, both held by tests: it never infers a
+gate's state by parsing the English in a reason (it reads the `outcome` the
+engine now carries), and it never writes portal text as markup.
+
+**Two bugs found by looking at the page.**
+
+1. **A euro threshold was being compared to lei.** The extractor read
+   "Garanția de participare este de 4.500,00 euro" correctly as 4500 EUR, and
+   the engine then compared the bare number against a profile figure in lei and
+   printed "the buyer asks for 4.500 RON". Two faults in one line: a false claim
+   about the buyer's own sentence, and a comparison about five times too
+   lenient, which could let a tender pass a gate it was never measured against.
+   A requirement in any currency other than RON is now CHECK, the reason names
+   the real currency, and the headroom term no longer divides lei by euro.
+   Fixed in its own commit, with six tests.
+2. **A gate's state could only be recovered by reading English prose.**
+   `Reason` now carries `outcome` — pass, fail, unknown or absent — straight
+   from the engine. `bidscout explain` marks each line with it too.
+
+**105 tests before, 123 after. `ruff` clean.** No existing test was changed or
+weakened. `make demo` and `make check` both still run end to end.
+
+Could not do, and why:
+
+- **No live check of anything**, a fourth time. Nothing in this session touched
+  the portal. The page shows the captured fixtures scored against
+  `profile.example.yaml`, and says so on its face.
+- **The page shows no GO**, because the example company does not clear any of
+  the three fixtures. Rather than invent a tender to manufacture a green badge,
+  the demo gained the third *already labelled* case from `eval/cases/`, which is
+  what surfaced the euro bug. A real GO arrives with real data.
+- **Secondary CPV codes**, still blocked on one live look (see step 3).
+
+Next session starts at **immediate step 1** (live re-verify, Gabriel's machine).
+After that, **step 4** — `bidscout fetch` — is what turns the page from a demo
+into a thing worth opening every morning, because it is what stops the database
+filling with notices the scorer skips.

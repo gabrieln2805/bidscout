@@ -1,0 +1,282 @@
+{
+  "schema": 1,
+  "generated_at": "2026-10-01T17:32:23+00:00",
+  "bidscout_version": "0.3.0",
+  "source": {
+    "database": "data/demo.sqlite3",
+    "profile": "profile.example.yaml",
+    "rules": "rules/it.yaml"
+  },
+  "company": {
+    "company_name": "Example SRL",
+    "cui": "RO12345678",
+    "average_turnover_ron": "1200000",
+    "similar_experience_ron": "900000",
+    "available_guarantee_ron": "50000",
+    "min_contract_ron": "50000",
+    "max_contract_ron": "3000000",
+    "cpv_watchlist": [
+      "72000000",
+      "72260000",
+      "48000000",
+      "30200000"
+    ],
+    "counties": [
+      "Cluj",
+      "Bucuresti"
+    ],
+    "certifications": [
+      "ISO 9001",
+      "ISO 27001"
+    ]
+  },
+  "rules": {
+    "name": "IT and software",
+    "go_threshold": 60,
+    "gates": [
+      {
+        "kind": "turnover",
+        "profile_key": "average_turnover_ron",
+        "label": "annual turnover"
+      },
+      {
+        "kind": "experience",
+        "profile_key": "similar_experience_ron",
+        "label": "similar experience"
+      },
+      {
+        "kind": "deposit",
+        "profile_key": "available_guarantee_ron",
+        "label": "participation guarantee"
+      }
+    ],
+    "weights": {
+      "cpv_match": 25,
+      "value_fit": 25,
+      "headroom": 30,
+      "deadline": 20
+    }
+  },
+  "totals": {
+    "scored": 3,
+    "skipped_unread": 1,
+    "go": 0,
+    "check": 2,
+    "no_go": 1
+  },
+  "tenders": [
+    {
+      "c_notice_id": "1097222",
+      "notice_no": "CN1097222",
+      "title": "Servicii de dezvoltare portal web si integrare",
+      "buyer": "COMUNA CHETANI",
+      "cpv": "72000000",
+      "estimated_value_ron": "620000.0",
+      "published_at": "2026-09-18T09:14:00Z",
+      "deadline_at": "2026-10-20T15:00:00Z",
+      "has_lots": false,
+      "is_simplified": false,
+      "decision": "CHECK",
+      "score": 96,
+      "reasons": [
+        {
+          "text": "annual turnover: the buyer states a requirement but no figure could be read. Read the quote and decide by hand.",
+          "quote": "Media cifrei de afaceri generale pe ultimele 3 exerciții financiare (2023, 2024, 2025) va fi cel puțin egală cu valoarea estimată a contractului.",
+          "source_field": "efCriteriaMin",
+          "outcome": "unknown"
+        },
+        {
+          "text": "similar experience: the buyer asks for 450.000 RON; you have 900.000 RON.",
+          "quote": "Experiența similară: servicii similare în valoare cumulată de minimum 450.000,00 lei în ultimii 3 ani.",
+          "source_field": "tpCriteriaQAStandardMin",
+          "outcome": "pass"
+        },
+        {
+          "text": "participation guarantee: the buyer asks for 4.500 EUR, and your profile is in RON. bidscout does not convert currencies, so convert this one by hand before deciding.",
+          "quote": "Garanția de participare este de 4.500,00 euro.",
+          "source_field": "depositsAndWarranties",
+          "outcome": "unknown"
+        }
+      ],
+      "unresolved": [
+        "annual turnover",
+        "participation guarantee"
+      ],
+      "requirements": [
+        {
+          "kind": "deposit",
+          "amount": "4500.00",
+          "currency": "EUR",
+          "quote": "Garanția de participare este de 4.500,00 euro.",
+          "source_field": "depositsAndWarranties",
+          "confidence": "high"
+        },
+        {
+          "kind": "experience",
+          "amount": "450000.00",
+          "currency": "RON",
+          "quote": "Experiența similară: servicii similare în valoare cumulată de minimum 450.000,00 lei în ultimii 3 ani.",
+          "source_field": "tpCriteriaQAStandardMin",
+          "confidence": "high"
+        },
+        {
+          "kind": "personal_situation",
+          "amount": null,
+          "currency": null,
+          "quote": "Ofertantii nu trebuie sa se regaseasca in situatiile prevazute la art. 164, 165, 167 din Legea 98/2016.",
+          "source_field": "personalSituation",
+          "confidence": "high"
+        },
+        {
+          "kind": "turnover",
+          "amount": null,
+          "currency": null,
+          "quote": "Media cifrei de afaceri generale pe ultimele 3 exerciții financiare (2023, 2024, 2025) va fi cel puțin egală cu valoarea estimată a contractului.",
+          "source_field": "efCriteriaMin",
+          "confidence": "low"
+        }
+      ]
+    },
+    {
+      "c_notice_id": "1096999",
+      "notice_no": "CN1096999",
+      "title": "Servicii de mentenanta aplicatii",
+      "buyer": "COMUNA CHETANI",
+      "cpv": "72000000",
+      "estimated_value_ron": "1804000.0",
+      "published_at": "2026-09-18T09:14:00Z",
+      "deadline_at": "2026-10-20T15:00:00Z",
+      "has_lots": false,
+      "is_simplified": false,
+      "decision": "CHECK",
+      "score": 66,
+      "reasons": [
+        {
+          "text": "annual turnover: the buyer states a requirement but no figure could be read. Read the quote and decide by hand.",
+          "quote": "Ofertantul va face dovada unei cifre de afaceri corespunzătoare valorii estimate a contractului, conform documentației de atribuire.",
+          "source_field": "efCriteriaMin",
+          "outcome": "unknown"
+        },
+        {
+          "text": "similar experience: the buyer does not ask for one.",
+          "quote": null,
+          "source_field": null,
+          "outcome": "absent"
+        },
+        {
+          "text": "participation guarantee: the buyer does not ask for one.",
+          "quote": null,
+          "source_field": null,
+          "outcome": "absent"
+        }
+      ],
+      "unresolved": [
+        "annual turnover"
+      ],
+      "requirements": [
+        {
+          "kind": "qualification",
+          "amount": null,
+          "currency": null,
+          "quote": "Certificat ONRC.",
+          "source_field": "mandatoryProfesionalQualif",
+          "confidence": "high"
+        },
+        {
+          "kind": "turnover",
+          "amount": null,
+          "currency": null,
+          "quote": "Ofertantul va face dovada unei cifre de afaceri corespunzătoare valorii estimate a contractului, conform documentației de atribuire.",
+          "source_field": "efCriteriaMin",
+          "confidence": "low"
+        }
+      ]
+    },
+    {
+      "c_notice_id": "1096282",
+      "notice_no": "CN1096282",
+      "title": "Servicii de digitalizare si implementare sistem software integrat",
+      "buyer": "COMUNA CHETANI",
+      "cpv": "72000000",
+      "estimated_value_ron": "1804000.0",
+      "published_at": "2026-09-18T09:14:00Z",
+      "deadline_at": "2026-10-20T15:00:00Z",
+      "has_lots": false,
+      "is_simplified": false,
+      "decision": "NO-GO",
+      "score": 66,
+      "reasons": [
+        {
+          "text": "annual turnover: the buyer asks for 2.700.000 RON; you have 1.200.000 RON.",
+          "quote": "Media cifrei de afaceri generale anuale pe ultimele 3 exerciții financiare (2023, 2024, 2025) trebuie să fie mai mare sau egala cu 2.700.000,00 Lei.",
+          "source_field": "efCriteriaMin",
+          "outcome": "fail"
+        },
+        {
+          "text": "similar experience: the buyer asks for 1.804.000 RON; you have 900.000 RON.",
+          "quote": "Ofertantul trebuie să fi prestat în ultimii 3 ani, în cadrul a maxim 2 contracte, a căror valoare cumulată să fie cel puțin egală cu 1.804.000,00 lei, exclusiv TVA, implementarea a cel puțin un sistem software integrat.",
+          "source_field": "tpCriteriaQAStandardMin",
+          "outcome": "fail"
+        },
+        {
+          "text": "participation guarantee: the buyer asks for 27.000 RON; you have 50.000 RON.",
+          "quote": "Garantia de participare este de 27.000,00 lei si se constituie conform art. 154 din Legea 98/2016.",
+          "source_field": "depositsAndWarranties",
+          "outcome": "pass"
+        }
+      ],
+      "unresolved": [],
+      "requirements": [
+        {
+          "kind": "deposit",
+          "amount": "27000.00",
+          "currency": "RON",
+          "quote": "Garantia de participare este de 27.000,00 lei si se constituie conform art. 154 din Legea 98/2016.",
+          "source_field": "depositsAndWarranties",
+          "confidence": "high"
+        },
+        {
+          "kind": "experience",
+          "amount": "1804000.00",
+          "currency": "RON",
+          "quote": "Ofertantul trebuie să fi prestat în ultimii 3 ani, în cadrul a maxim 2 contracte, a căror valoare cumulată să fie cel puțin egală cu 1.804.000,00 lei, exclusiv TVA, implementarea a cel puțin un sistem software integrat.",
+          "source_field": "tpCriteriaQAStandardMin",
+          "confidence": "high"
+        },
+        {
+          "kind": "personal_situation",
+          "amount": null,
+          "currency": null,
+          "quote": "Ofertantii nu trebuie sa se regaseasca in situatiile prevazute la art. 164, 165, 167 din Legea 98/2016.",
+          "source_field": "personalSituation",
+          "confidence": "high"
+        },
+        {
+          "kind": "qualification",
+          "amount": null,
+          "currency": null,
+          "quote": "Certificat constatator emis de ONRC.",
+          "source_field": "mandatoryProfesionalQualif",
+          "confidence": "high"
+        },
+        {
+          "kind": "turnover",
+          "amount": "2700000.00",
+          "currency": "RON",
+          "quote": "Media cifrei de afaceri generale anuale pe ultimele 3 exerciții financiare (2023, 2024, 2025) trebuie să fie mai mare sau egala cu 2.700.000,00 Lei.",
+          "source_field": "efCriteriaMin",
+          "confidence": "high"
+        }
+      ]
+    }
+  ],
+  "skipped": [
+    {
+      "c_notice_id": "1097111",
+      "notice_no": "CN1097111",
+      "title": "Licente software",
+      "buyer": "COMUNA CHETANI",
+      "published_at": "2026-09-18T09:14:00Z"
+    }
+  ]
+}

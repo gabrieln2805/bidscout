@@ -5,6 +5,10 @@
 It reads each new tender, compares it with your company profile, and answers
 one question: *should you bid?*
 
+**The page:** <https://gabrieln2805.github.io/bidscout/> — built by
+`make site` from the captured fixtures, so every number on it is reproduced by
+a command in this repository.
+
 ---
 
 ## Try it in one minute
@@ -17,6 +21,13 @@ make demo
 `make demo` builds a small database from captured fixtures and scores it. It
 needs no network and no profile. You should see one NO-GO with both numbers
 printed, one CHECK, and one notice skipped because it was never read in full.
+
+And to see the page:
+
+```bash
+make site      # rebuild the demo database and the JSON the page reads
+make serve     # http://localhost:8000
+```
 
 Then make it yours:
 
@@ -54,8 +65,13 @@ you whether you qualify.
    figure at all and how often the figure is right. The "60%" above is a
    guess from a one-day spike until that table says otherwise.
 
-Not built yet: the web page, direct acquisitions, the document checklist,
-alerts, and PDF reading for the other 40%. See `STATUS.md`.
+6. **Shows its work.** One static page — your company on the left, the
+   tenders ranked on the right, click one for the buyer's own sentences. It is
+   written by `bidscout export` from the scored database, so it can never
+   claim anything the database does not hold. See `docs/README.md`.
+
+Not built yet: direct acquisitions, the document checklist, alerts, and PDF
+reading for the other 40%. See `STATUS.md`.
 
 ## How it decides
 
@@ -87,12 +103,15 @@ scorer re-reads it on every run.
 | `bidscout score` | Rank stored tenders | no |
 | `bidscout explain <id>` | Every reason behind one verdict, with quotes | no |
 | `bidscout requirements <id>` | The sentences the last score read, with their field | no |
+| `bidscout export` | Write `docs/data.json`, the file the web page reads | no |
 | `bidscout stats` | What the database holds | no |
 | `bidscout eval` | Measure the extractor against the labelled cases | no |
 | `bidscout capture <id>` | Turn a stored Section 3 into a new case to label | no |
 | `bidscout watch --days 1` | Poll the portal and store what is new | **yes** |
 | `bidscout capture <id> --live` | Fetch a Section 3 and capture it | **yes** |
-| `make test` | 105 offline tests | no |
+| `make site` | Rebuild the demo database and the page's data | no |
+| `make serve` | Serve `docs/` the way GitHub Pages does | no |
+| `make test` | 123 offline tests | no |
 | `make lint` | `ruff`, line length 100 | no |
 
 ## Layout
@@ -104,11 +123,13 @@ src/bidscout/
   decide/     the rules engine; the rules are YAML
   store/      SQLite; the raw JSON is never dropped
   pipeline.py the glue, and the offline scorer
+  export.py   the scored database -> the JSON the web page reads
   cli.py      the commands
   accuracy/   the harness: labelled cases in, a coverage table out
 rules/it.yaml the IT rule set
 eval/cases/   notices labelled by hand; the input `bidscout eval` measures
-docs/         the verified findings about the portal
+docs/         the published page (index.html + data.json), and the
+              verified findings about the portal
 ```
 
 ## Data

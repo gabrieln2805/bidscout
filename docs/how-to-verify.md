@@ -7,7 +7,7 @@ check.** No finding lives only in a chat window. Every claim gets a command.
 
 ```bash
 make install
-make check      # 105 offline tests + ruff
+make check      # 123 offline tests + ruff
 make demo       # the whole pipeline on captured fixtures, no network
 ```
 
@@ -15,12 +15,14 @@ make demo       # the whole pipeline on captured fixtures, no network
 
 | Command | Claim it tests | Needs the portal |
 |---|---|---|
-| `make test` | 105 offline tests on captured fixtures. Under a second. | no |
+| `make test` | 123 offline tests on captured fixtures. Under a second. | no |
 | `make lint` | `ruff` clean at line length 100. | no |
 | `make demo` | Store → extract → decide → rank, end to end. | no |
 | `bidscout score` | Ranking from the database only. | no |
 | `bidscout explain <id>` | Every reason carries the buyer's own sentence. | no |
 | `bidscout requirements <id>` | The stored trace: every figure with its quote and field. | no |
+| `make site` | The published page is rebuilt from the database, not hand-written. | no |
+| `make serve` | The page as GitHub Pages serves it, at localhost:8000. | no |
 | `bidscout stats` | What the database holds. | no |
 | `make eval` | Coverage and precision per gate, on hand-labelled notices. | no |
 | `bidscout capture <id>` | A stored Section 3 becomes a new case to label. | no |
@@ -42,6 +44,12 @@ make demo       # the whole pipeline on captured fixtures, no network
   not as a float.
 - A database written before the `has_lots` column still opens, and its rows
   are kept rather than rebuilt.
+- A requirement the buyer stated in euro gives CHECK, and the reason names
+  EUR rather than claiming RON.
+- No amount in `docs/data.json` is a JSON number, so no figure on the page
+  has passed through a float.
+- The page reads the schema version the exporter writes, and never puts
+  portal text into the DOM as markup.
 - A notice with no stored Section 3 is skipped and counted, not scored.
 - The raw portal payload survives a database round trip.
 - The accuracy harness counts nothing nobody labelled, and reports an
