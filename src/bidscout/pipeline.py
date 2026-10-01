@@ -36,6 +36,7 @@ def notice_from_item(item: dict[str, Any]) -> Notice:
         published_at=_as_str(item.get("noticeStateDate")),
         deadline_at=_as_str(item.get("minTenderReceiptDeadline")),
         notice_type_id=_as_int(item.get("sysNoticeTypeId")),
+        has_lots=bool(item.get("hasLots")),
         raw=item,
     )
 
@@ -78,10 +79,14 @@ def score_stored(
             skipped.append(notice)
             continue
         requirements = extract_requirements(section3)
+        # Stored before the verdict, so an explanation can name the sentences
+        # behind a score without re-reading Section 3 or re-running the parser.
+        store.save_requirements(notice.c_notice_id, requirements)
         context = {
             "cpv": notice.cpv,
             "estimated_value_ron": notice.estimated_value_ron,
             "days_to_deadline": _days_to(notice.deadline_at, today),
+            "has_lots": notice.has_lots,
         }
         verdict = decide(requirements, profile, rules, context)
         store.save_verdict(notice.c_notice_id, str(profile.get("company_name", "default")), verdict)

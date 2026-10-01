@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS notices (
     published_at        TEXT,
     deadline_at         TEXT,
     notice_type_id      INTEGER,
+    has_lots            INTEGER,
     first_seen          TEXT NOT NULL,
     last_seen           TEXT NOT NULL,
     raw                 TEXT NOT NULL
@@ -38,6 +39,27 @@ CREATE TABLE IF NOT EXISTS sections (
     c_notice_id   TEXT PRIMARY KEY REFERENCES notices (c_notice_id),
     fetched_at    TEXT NOT NULL,
     section3_raw  TEXT NOT NULL
+);
+
+-- What the extractor read out of Section 3 on the last score, with the
+-- buyer's own sentence beside every figure. This table is **derived**: it is
+-- rewritten whenever a notice is scored again, and ``sections.section3_raw``
+-- stays the only source of truth (ground rule 3). It exists so that a saved
+-- verdict can be traced back to the sentences behind it without re-running the
+-- parser, which is what ``bidscout requirements <id>`` prints.
+--
+-- ``amount`` is TEXT because these are Decimals. Stored as REAL, "2.700.000,00
+-- Lei" would come back as a float and no longer be the number the buyer wrote.
+CREATE TABLE IF NOT EXISTS requirements (
+    c_notice_id   TEXT NOT NULL REFERENCES notices (c_notice_id),
+    kind          TEXT NOT NULL,
+    amount        TEXT,
+    currency      TEXT,
+    quote         TEXT NOT NULL,
+    source_field  TEXT NOT NULL,
+    confidence    TEXT NOT NULL,
+    extracted_at  TEXT NOT NULL,
+    PRIMARY KEY (c_notice_id, kind)
 );
 
 CREATE TABLE IF NOT EXISTS documents (
@@ -60,3 +82,13 @@ CREATE TABLE IF NOT EXISTS scores (
     PRIMARY KEY (c_notice_id, company)
 );
 """
+
+
+#: Columns added after a database may already have been written. ``SCHEMA``
+#: uses ``CREATE TABLE IF NOT EXISTS``, which does nothing at all to a table
+#: that already exists, so a column added here would be missing from an older
+#: file and the first query naming it would fail with "no such column".
+#: ``Store`` applies these on open. Entries are (table, column, column DDL).
+ADDED_COLUMNS: tuple[tuple[str, str, str], ...] = (
+    ("notices", "has_lots", "has_lots INTEGER"),
+)

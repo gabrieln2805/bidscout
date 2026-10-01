@@ -51,6 +51,8 @@ Two goals, in order:
 | Reading the requirements out of a tender | Working | 11 offline tests on fixtures |
 | Deciding GO / CHECK / NO-GO | Working, 3 gates + a score | 7 offline tests |
 | Storing what we find | Working | 7 offline tests |
+| Tracing a verdict to its sentences | Working, a `requirements` table | 10 offline tests |
+| Multi-lot tenders | Flagged, not read: they are held at CHECK | 5 offline tests |
 | Scoring from what we stored | Working, no requests to SEAP | 5 offline tests |
 | Measuring how well we read | Working, on 3 labelled notices | `make eval` + 17 tests |
 | The command line | Working offline | 11 offline tests |
@@ -59,7 +61,7 @@ Two goals, in order:
 | Direct purchases | Mapped, not wired in | — |
 | Reading the PDFs (the other 40%) | Not started | — |
 
-**87 automatic tests, all offline, all passing.** `ruff` clean at line
+**105 automatic tests, all offline, all passing.** `ruff` clean at line
 length 100.
 
 ---
@@ -73,6 +75,9 @@ make install && make demo
 - **Score stored tenders** — GO, CHECK or NO-GO, a score out of 100, the
   number behind the decision, and the buyer's own sentence.
 - **Explain one verdict** — every reason with its quote and its source field.
+- **Trace a verdict** — `bidscout requirements <id>` prints every figure the
+  last score read, with the buyer's sentence and the Section 3 field it came
+  from. No parser run, no profile, no network.
 - **Watch the portal** — polls a publication window and stores what is new.
   *Written but not yet run against the live portal.*
 - **See what the database holds** — `bidscout stats`.
@@ -112,6 +117,18 @@ after the behaviour it defends.
   invention can push a verdict to NO-GO on a number nobody wrote.
 - A label amount written as an unquoted JSON number is refused, because
   `json` reads it as a float and it is then not the number that was typed.
+- A tender **split into lots** is never a NO-GO. The notice-level turnover or
+  experience figure may be the total for every lot, while you would bid for
+  one, so the verdict is held at CHECK and the lots are listed as unresolved.
+  *(1 October 2026.)*
+- A **stored** requirement amount is a TEXT column rebuilt as `Decimal`. As a
+  REAL, 2.700.000,00 Lei would come back as a float and move a hard gate by a
+  fraction of a leu.
+- An **empty requirements trace means "not scored yet"**, never "the buyer asks
+  for nothing". `bidscout requirements` says which, and exits 1.
+- A database written **before** a column existed is migrated by adding the
+  column, never by rebuilding the table. Ground rule 3 applies to migrations:
+  no stored row is dropped to make one simpler.
 
 ---
 
@@ -149,14 +166,24 @@ looks at. A pretty page over a parser nobody has measured is worth nothing.
    notice, then fill the labels in. Until then the "60% coverage" figure is
    still a guess.
 
-3. **Close the data-model gaps that already bite.**
+3. **Close the data-model gaps that already bite.** Two of three done on
+   1 October 2026; the first bullet is still open and needs the portal.
    - Secondary CPV codes are not stored, so `--cpv` silently misses any
-     notice whose IT code is not the primary one.
-   - Lots are not modelled at all (`hasLots`), so a multi-lot tender is
-     scored as one thing.
-   - Requirements are re-parsed on every score and never stored, so a
+     notice whose IT code is not the primary one. **Still open, and blocked:**
+     the search item carries one CPV field only (`cpvCodeAndName`), and
+     nothing in `docs/data-sources.md` says where a secondary code lives. It
+     needs one live look at a notice that has one — either the detail view or
+     the lot list. Guessing a field name offline would be an invented fact.
+   - ~~Lots are not modelled at all (`hasLots`), so a multi-lot tender is
+     scored as one thing.~~ **Done 1 October 2026.** `hasLots` is read,
+     stored and refreshed on a re-poll, and a multi-lot tender is held at
+     CHECK instead of being measured against a figure that may cover every
+     lot. The lot *contents* are still unread — that is the next piece, and
+     it needs the `GetSection22LotList` field names from a live call.
+   - ~~Requirements are re-parsed on every score and never stored, so a
      verdict cannot be traced back without redoing the work. Give them a
-     table with their citations.
+     table with their citations.~~ **Done 1 October 2026.** A `requirements`
+     table, written on every score, read by `bidscout requirements <id>`.
 
 4. **Wire the ingest pipeline end to end.** `watch` stores notices, but
    nothing fetches their Section 3 or their file list, so the database fills
@@ -335,3 +362,64 @@ Next session starts at **immediate step 1** (live re-verify, Gabriel's
 machine), then **step 3** (secondary CPV codes, lots, stored requirements).
 Labelling thirty notices for the harness can happen in parallel and needs no
 code.
+
+### Session 5 — 1 October 2026 (cloud, no portal access)
+
+Picked immediate step 3, the data-model gaps. Step 1 (re-verify against the
+live portal) was skipped again, not done: the cloud sandbox cannot reach
+`e-licitatie.ro`, so it stays Gabriel's job on his own machine. Step 2 is done.
+
+Two of step 3's three bullets are now closed.
+
+**Lots.** `hasLots` is read from the search item into `Notice.has_lots`, stored
+in its own column, and passed to the engine. A tender split into lots is now
+held at **CHECK** and the lots appear in `unresolved`, because the turnover or
+experience figure in Section 3 may be the total for every lot while you would
+bid for one — comparing a company against that total and printing NO-GO is the
+"we could not tell" that ground rule 2 forbids. The test asserts both halves:
+the same notice *without* lots is still a legitimate NO-GO, so a change that
+turned every verdict into CHECK could not pass as a fix.
+
+`has_lots` is the one convenience column refreshed when a notice is seen again,
+because it changes the verdict: a corrigendum that splits a tender must not
+leave yesterday's GO standing.
+
+**The requirements trace.** A `requirements` table, written on every score,
+holding each figure with the buyer's sentence, the Section 3 field, the
+confidence and the time it was read. `bidscout requirements <id>` prints it —
+no profile, no rules, no parser run, no network. The table is *derived*: the
+scorer still re-reads `sections.section3_raw` every run, so an extractor fix
+still applies immediately, and the raw section remains the only source of
+truth. `amount` is TEXT rebuilt as `Decimal`; as a REAL it would come back as a
+float and move a hard gate by a fraction of a leu. An empty result is reported
+as "not scored yet", never as "the buyer asks for nothing".
+
+**A migration step.** The schema is applied with `CREATE TABLE IF NOT EXISTS`,
+which does nothing to a table that already exists, so `has_lots` would have
+been missing from any database written earlier and the first query naming it
+would have failed with "no such column" — on the one machine holding the real
+data. `Store` now adds missing columns on open, from a declared list, and a
+test opens a database built with the old DDL and checks the old row survives.
+
+**87 tests before, 105 after. `ruff` clean.** No existing test was changed or
+weakened; `make demo` still runs end to end.
+
+Could not do, and why:
+
+- **Secondary CPV codes — blocked, not skipped.** The search item has one CPV
+  field (`cpvCodeAndName`) and `docs/data-sources.md` records no secondary-code
+  field anywhere. Storing a list needs one live look at a notice that has a
+  secondary code, to learn where the portal puts it. Writing a field name from
+  guesswork would be an invented fact in a project whose value is that its
+  claims can be checked, so it was left alone. `--cpv` still prints its limit.
+- **The lot contents are still unread.** Only the flag is modelled. Reading the
+  per-lot requirements needs the `GetSection22LotList` response shape, which is
+  a live call. Until then a multi-lot tender is an honest CHECK, not a score.
+- **No live check of anything**, a third time. No `watch`, `probe`, `fetch` or
+  `capture --live` was run. Nothing in this session touched the portal.
+- **Still three labelled cases.** Labelling needs a human who reads Romanian.
+
+Next session starts at **immediate step 1** (live re-verify, Gabriel's
+machine). After that, either the secondary-CPV field and the lot list — both
+unblocked by the same live look — or **step 4**, `bidscout fetch`, which is the
+piece that stops the database filling with notices the scorer then skips.

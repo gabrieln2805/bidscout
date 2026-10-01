@@ -7,7 +7,7 @@ check.** No finding lives only in a chat window. Every claim gets a command.
 
 ```bash
 make install
-make check      # 87 offline tests + ruff
+make check      # 105 offline tests + ruff
 make demo       # the whole pipeline on captured fixtures, no network
 ```
 
@@ -15,17 +15,18 @@ make demo       # the whole pipeline on captured fixtures, no network
 
 | Command | Claim it tests | Needs the portal |
 |---|---|---|
-| `make test` | 87 offline tests on captured fixtures. Under a second. | no |
+| `make test` | 105 offline tests on captured fixtures. Under a second. | no |
 | `make lint` | `ruff` clean at line length 100. | no |
 | `make demo` | Store → extract → decide → rank, end to end. | no |
 | `bidscout score` | Ranking from the database only. | no |
 | `bidscout explain <id>` | Every reason carries the buyer's own sentence. | no |
+| `bidscout requirements <id>` | The stored trace: every figure with its quote and field. | no |
 | `bidscout stats` | What the database holds. | no |
 | `make eval` | Coverage and precision per gate, on hand-labelled notices. | no |
 | `bidscout capture <id>` | A stored Section 3 becomes a new case to label. | no |
 | `bidscout watch --days 1` | The portal still answers as documented. | **yes** |
 
-## What is proven and what is not (27 September 2026)
+## What is proven and what is not (1 October 2026)
 
 **Proven by the test suite, offline:**
 
@@ -35,6 +36,12 @@ make demo       # the whole pipeline on captured fixtures, no network
 - Romanian amounts are read correctly, and bare years are not read as money.
 - A requirement cannot exist without a quote.
 - An unreadable requirement or a missing profile figure gives CHECK, not NO-GO.
+- A tender split into lots gives CHECK, not NO-GO, because the notice-level
+  figure may be the total for all lots and the lots have not been read.
+- A stored requirement amount comes back as the Decimal the buyer wrote,
+  not as a float.
+- A database written before the `has_lots` column still opens, and its rows
+  are kept rather than rebuilt.
 - A notice with no stored Section 3 is skipped and counted, not scored.
 - The raw portal payload survives a database round trip.
 - The accuracy harness counts nothing nobody labelled, and reports an

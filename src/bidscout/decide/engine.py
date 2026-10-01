@@ -40,9 +40,25 @@ def decide(
         elif outcome is _UNKNOWN:
             unresolved.append(gate.label)
 
+    # A tender split into lots states requirements we have not matched to a
+    # lot. The notice-level figure may be the total for every lot together,
+    # while you would bid for one. Comparing your company against the total and
+    # printing NO-GO would be exactly the "we could not tell" that ground rule 2
+    # forbids, so an unread lot structure holds the verdict at CHECK.
+    lots_unread = bool(context.get("has_lots"))
+    if lots_unread:
+        reasons.append(
+            Reason(
+                "This tender is split into lots, and bidscout has not read them yet. "
+                "The figures above may be the total for all lots, not the lot you "
+                "would bid for. Open the lot list before deciding."
+            )
+        )
+        unresolved.append("the lots (not read yet)")
+
     score = _score(requirements, profile, rules, context, reasons)
 
-    if failed:
+    if failed and not lots_unread:
         # A gate that the buyer states and the company misses is the one case
         # where NO-GO is honest: both numbers are known and they do not meet.
         return Verdict(Decision.NO_GO, score, reasons, unresolved)
