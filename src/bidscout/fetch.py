@@ -218,7 +218,8 @@ def format_fetch_report(run: FetchRun) -> str:
     if run.simplified_waiting:
         count = run.simplified_waiting
         lines.append(
-            f"  {count} simplified {_plural(count, 'notice', 'notices')} in the database "
+            f"  {count} simplified or concession {_plural(count, 'notice', 'notices')} "
+            "in the database "
             f"{_plural(count, 'has', 'have')} no Section 3 and {_plural(count, 'was', 'were')} "
             "not asked for: no detail endpoint is known for them yet "
             "(docs/data-sources.md, open item 1)."

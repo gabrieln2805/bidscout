@@ -96,3 +96,21 @@ def test_an_error_row_already_on_disk_is_requeued_and_never_scored(
         run = score_stored(store, strong_profile, rules)
         assert run.scored == 0
         assert [n.c_notice_id for n in run.skipped_unread] == ["1096282"]
+
+
+def test_a_concession_notice_is_not_asked_for_again_and_again(tmp_path, notice_item) -> None:
+    """PC… notices (type 7) answer "not found" on the type-2 endpoint, every time.
+
+    On the 2 October run both were refused. Left in the queue they would be
+    requested on every future run, for ever, so they are counted with the
+    simplified notices instead: no endpoint is known for either.
+    """
+    with Store(tmp_path / "t.sqlite3") as store:
+        store.save_notice(
+            notice_from_item(
+                {**notice_item, "cNoticeId": 100029383, "noticeNo": "PC1003352",
+                 "sysNoticeTypeId": 7}
+            )
+        )
+        assert list(store.notices_missing_section3(exclude_simplified=True)) == []
+        assert store.count_missing_section3(simplified_only=True) == 1

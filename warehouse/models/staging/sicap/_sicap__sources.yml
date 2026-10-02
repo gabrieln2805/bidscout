@@ -1,0 +1,55 @@
+version: 2
+
+sources:
+  - name: sicap
+    description: >
+      What the public SICAP JSON API (https://www.e-licitatie.ro/api-pub/)
+      returned, landed by `bidscout watch` and `bidscout fetch` into the SQLite
+      file exactly as it arrived. Endpoints, filters and traps are written down
+      in docs/data-sources.md.
+    database: bidscout_landing
+    schema: main
+    tables:
+      - name: notices
+        description: >
+          One row per notice seen in a search
+          (POST NoticeCommon/GetCNoticeList). `raw` is the whole search item;
+          the other columns are convenience copies made at landing time and are
+          not read by the warehouse.
+        columns:
+          - name: c_notice_id
+            description: The portal's cNoticeId. The id every detail endpoint takes.
+            data_tests: [unique, not_null]
+          - name: raw
+            description: The search item as JSON text. Never dropped (ground rule 3).
+            data_tests: [not_null]
+
+      - name: sections
+        description: >
+          Section 3 (qualification criteria) per notice, from
+          GET NoticeCommon/GetSection3View?initNoticeId={cNoticeId}. Before
+          2 October 2026 a "not found" answer could be landed here; staging
+          marks it with `is_portal_error`.
+        columns:
+          - name: c_notice_id
+            data_tests:
+              - unique
+              - not_null
+              - relationships:
+                  arguments:
+                    to: source('sicap', 'notices')
+                    field: c_notice_id
+
+      - name: documents
+        description: >
+          The file list per notice, from
+          GET NoticeCommon/GetDfNoticeSectionFiles?initNoticeId={cNoticeId},
+          one row per file.
+        columns:
+          - name: c_notice_id
+            data_tests:
+              - not_null
+              - relationships:
+                  arguments:
+                    to: source('sicap', 'notices')
+                    field: c_notice_id

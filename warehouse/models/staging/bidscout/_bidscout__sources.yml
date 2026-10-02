@@ -1,0 +1,30 @@
+version: 2
+
+sources:
+  - name: bidscout
+    description: >
+      What bidscout's own Python decided, written to the landing file by
+      `bidscout score` (which `bidscout export` runs first). The rules engine
+      stays in Python because every figure is a Decimal and every verdict must
+      carry the buyer's sentence; dbt models its output and never re-decides.
+    database: bidscout_landing
+    schema: main
+    tables:
+      - name: requirements
+        description: >
+          Every figure the extractor read from a Section 3, with the buyer's
+          sentence and the field it came from. Rewritten on every score.
+        columns:
+          - name: quote
+            data_tests: [not_null]
+
+      - name: scores
+        description: >
+          One verdict per (notice, company): GO / CHECK / NO-GO, a 0-100 score,
+          the reasons as a JSON array and the unresolved gates as a JSON array.
+        columns:
+          - name: decision
+            data_tests:
+              - accepted_values:
+                  arguments:
+                    values: ["GO", "CHECK", "NO-GO"]

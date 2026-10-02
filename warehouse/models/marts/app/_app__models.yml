@@ -1,0 +1,56 @@
+version: 2
+
+# App marts: the contract with the frontend. `bidscout export` reads these four
+# tables and nothing else, and writes them to site/data.json. Each is filtered
+# to the company in var('company'), which the export takes from the profile.
+models:
+  - name: app_tenders
+    description: >
+      Every landed notice, once, with the verdict for the app's company when it
+      has one. A notice whose `read_status` is not 'scored' has no decision and
+      the page lists it as not read, never as a notice that asks for nothing.
+    columns:
+      - name: c_notice_id
+        data_tests: [unique, not_null]
+      - name: decision
+        description: Null unless read_status = 'scored'.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["GO", "CHECK", "NO-GO"]
+      - name: read_status
+        data_tests: [not_null]
+    data_tests:
+      - scored_iff_decided
+
+  - name: app_tender_reasons
+    description: The explanation behind each verdict in app_tenders, one line per row.
+    data_tests:
+      - unique_combination:
+          arguments:
+            columns: [c_notice_id, reason_index]
+    columns:
+      - name: c_notice_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('app_tenders')
+                field: c_notice_id
+
+  - name: app_tender_requirements
+    description: The figures and sentences each verdict was measured on.
+    data_tests:
+      - unique_combination:
+          arguments:
+            columns: [c_notice_id, requirement_kind]
+    columns:
+      - name: amount_text
+        description: The amount exactly as stored, a string. Never a JSON number on the page.
+      - name: quote
+        data_tests: [not_null]
+
+  - name: app_pipeline_status
+    description: How many landed notices are at each read_status. Sums to the landing count.
+    columns:
+      - name: read_status
+        data_tests: [unique, not_null]

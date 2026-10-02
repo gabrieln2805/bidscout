@@ -1,4 +1,4 @@
-# Copy this file to profile.yaml and put your own numbers in.
+# Copy this file to config/profile.yaml and put your own numbers in.
 # profile.yaml is in .gitignore — it never leaves your machine.
 
 company_name: Example SRL

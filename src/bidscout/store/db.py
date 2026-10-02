@@ -243,9 +243,16 @@ class Store:
         for row in self.connection.execute(sql, params):
             yield _row_to_notice(row)
 
-    #: A notice is simplified when the portal marks it type 17 or numbers it
-    #: SCN…. No detail endpoint is known for either, so nothing can read one.
-    _SIMPLIFIED = "(n.notice_type_id = 17 OR UPPER(n.notice_no) LIKE 'SCN%')"
+    #: A notice nothing can read yet: anything that is not a full contract
+    #: notice (type 2). That is simplified notices (type 17, SCN…) and, found on
+    #: the 2 October run, concession notices (type 7, PC…), which the type-2
+    #: Section 3 endpoint answers "not found". Left in the queue, they would be
+    #: asked for again on every run. The parameters below still say
+    #: "simplified", the largest group by far.
+    _SIMPLIFIED = (
+        "((n.notice_type_id IS NOT NULL AND n.notice_type_id <> 2) "
+        "OR UPPER(n.notice_no) LIKE 'SCN%')"
+    )
 
     #: Stored notices nobody has read: no row in ``sections``, or a row holding
     #: the portal's "not found" answer instead of a section. The 2 October run

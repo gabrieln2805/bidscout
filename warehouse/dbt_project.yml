@@ -1,0 +1,35 @@
+# The bidscout warehouse: the tables the app reads, built from what was landed.
+#
+#   landing (SQLite, written by `bidscout`)  ->  staging  ->  intermediate  ->  marts
+#
+# Landing is attached read-only; nothing here writes to it. The frontend reads
+# the `app_*` marts and nothing else. See docs/data-model.md.
+name: bidscout
+version: "0.4.0"
+config-version: 2
+profile: bidscout
+
+model-paths: ["models"]
+macro-paths: ["macros"]
+target-path: "target"
+clean-targets: ["target", "logs"]
+
+vars:
+  # Whose verdicts the app marts show. `bidscout export` passes the company
+  # name from the profile it was given; this default is the example profile.
+  company: "Example SRL"
+
+models:
+  bidscout:
+    staging:
+      +materialized: view
+      +schema: staging
+    intermediate:
+      +materialized: view
+      +schema: intermediate
+    marts:
+      +materialized: table
+      core:
+        +schema: core
+      app:
+        +schema: app

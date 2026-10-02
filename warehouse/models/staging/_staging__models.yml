@@ -1,0 +1,51 @@
+version: 2
+
+# Staging: one model per landing table, typed, renamed, nothing joined.
+models:
+  - name: stg_sicap__notices
+    description: One row per notice, every column parsed from the portal's search item.
+    columns:
+      - name: c_notice_id
+        data_tests: [unique, not_null]
+      - name: notice_no
+        description: CN… contract notice, SCN… simplified notice, PC… concession notice.
+        data_tests: [not_null]
+      - name: notice_kind
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["contract notice", "simplified notice", "concession notice", "other"]
+      - name: buyer_fiscal_code
+        description: The buyer's CUI as digits only, without "RO" or spaces.
+      - name: estimated_value_ron
+        description: DECIMAL(18,2), read from the JSON text and never through a float.
+
+  - name: stg_sicap__sections
+    description: One row per landed Section 3, with the portal's "not found" answer marked.
+    columns:
+      - name: c_notice_id
+        data_tests: [unique, not_null]
+      - name: is_portal_error
+        description: True when the portal answered hasError instead of a section.
+        data_tests: [not_null]
+
+  - name: stg_sicap__documents
+    description: One row per attached file, with the public download URL.
+    data_tests:
+      - unique_combination:
+          arguments:
+            columns: [c_notice_id, document_guid]
+
+  - name: stg_bidscout__requirements
+    description: The extractor's output, with the stored amount kept as text and as a decimal.
+    data_tests:
+      - unique_combination:
+          arguments:
+            columns: [c_notice_id, requirement_kind]
+
+  - name: stg_bidscout__scores
+    description: The rules engine's verdicts, one per (notice, company).
+    data_tests:
+      - unique_combination:
+          arguments:
+            columns: [c_notice_id, company]

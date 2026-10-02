@@ -37,7 +37,7 @@ def notice_item() -> dict[str, Any]:
 
 @pytest.fixture
 def rules() -> RuleSet:
-    return load_rules(Path(__file__).parents[1] / "rules" / "it.yaml")
+    return load_rules(Path(__file__).parents[1] / "config" / "rules" / "it.yaml")
 
 
 @pytest.fixture

@@ -1,0 +1,105 @@
+version: 2
+
+# Core marts: the analytical model of the tender market as bidscout has seen
+# it. Company-independent except for the verdict facts, which carry `company`.
+models:
+  - name: dim_buyers
+    description: One row per contracting authority, keyed by CUI (or by name when none is printed).
+    columns:
+      - name: buyer_key
+        data_tests: [unique, not_null]
+
+  - name: dim_cpv
+    description: One row per primary CPV code seen. Secondary codes are not landed yet.
+    columns:
+      - name: cpv_code
+        data_tests: [unique, not_null]
+
+  - name: fct_notices
+    description: >
+      One row per notice: what the portal published, how far bidscout has read
+      it (`read_status`) and how many files it carries.
+    columns:
+      - name: c_notice_id
+        data_tests: [unique, not_null]
+      - name: buyer_key
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_buyers')
+                field: buyer_key
+      - name: cpv_code
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_cpv')
+                field: cpv_code
+      - name: read_status
+        description: >
+          scored — read and judged for the app's company; read, not scored —
+          Section 3 on file, no verdict yet; portal refused — the portal said
+          "not found"; no known endpoint — simplified or concession notice,
+          nothing can read it yet; awaiting fetch — run `bidscout fetch`.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["scored", "read, not scored", "portal refused",
+                         "no known endpoint", "awaiting fetch"]
+
+  - name: fct_documents
+    description: One row per file attached to a notice. `download_url` needs no sign-in.
+    columns:
+      - name: c_notice_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('fct_notices')
+                field: c_notice_id
+
+  - name: fct_requirements
+    description: >
+      One row per requirement read from a Section 3, with the buyer's own
+      sentence (`quote`) and the field it came from. `amount_text` is exactly
+      what was stored; `amount` is the same figure as a decimal for analysis.
+    data_tests:
+      - unique_combination:
+          arguments:
+            columns: [c_notice_id, requirement_kind]
+    columns:
+      - name: quote
+        data_tests: [not_null]
+      - name: confidence
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["high", "low"]
+
+  - name: fct_verdicts
+    description: One row per (notice, company) — GO / CHECK / NO-GO and a 0-100 score.
+    data_tests:
+      - unique_combination:
+          arguments:
+            columns: [c_notice_id, company]
+    columns:
+      - name: decision
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["GO", "CHECK", "NO-GO"]
+      - name: score
+        data_tests: [not_null]
+
+  - name: fct_verdict_reasons
+    description: One row per line of a verdict's explanation, in the engine's order.
+    data_tests:
+      - unique_combination:
+          arguments:
+            columns: [c_notice_id, company, reason_index]
+    columns:
+      - name: outcome
+        description: What the gate did. The page marks gates from this, never from the text.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["pass", "fail", "unknown", "absent"]
