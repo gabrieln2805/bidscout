@@ -51,8 +51,12 @@ you whether you qualify.
 ## What bidscout does today
 
 1. **Watches** SEAP for tenders in your CPV codes and stores what is new.
-2. **Reads** the qualification section out of the portal's own JSON. About
-   60% of tenders can be decided without opening a PDF.
+2. **Reads** the qualification section out of the portal's own JSON, for every
+   stored notice that has none yet (`bidscout fetch`). About 60% of tenders can
+   be decided without opening a PDF. A section the reader recognises nothing in
+   is kept and reported as **CHECK** — never GO, which is what an unreadable
+   section would otherwise score once every gate reads "the buyer does not ask
+   for one".
 3. **Extracts** the gates as facts that each keep the buyer's own sentence.
 4. **Decides** GO, CHECK or NO-GO with a score out of 100 and a short reason:
 
@@ -108,10 +112,11 @@ scorer re-reads it on every run.
 | `bidscout eval` | Measure the extractor against the labelled cases | no |
 | `bidscout capture <id>` | Turn a stored Section 3 into a new case to label | no |
 | `bidscout watch --days 1` | Poll the portal and store what is new | **yes** |
+| `bidscout fetch` | Read Section 3 and the file list for stored notices that have neither | **yes** |
 | `bidscout capture <id> --live` | Fetch a Section 3 and capture it | **yes** |
 | `make site` | Rebuild the demo database and the page's data | no |
 | `make serve` | Serve `docs/` the way GitHub Pages does | no |
-| `make test` | 123 offline tests | no |
+| `make test` | 163 offline tests | no |
 | `make lint` | `ruff`, line length 100 | no |
 
 ## Layout
@@ -122,6 +127,7 @@ src/bidscout/
   extract/    portal text -> facts that keep their quote
   decide/     the rules engine; the rules are YAML
   store/      SQLite; the raw JSON is never dropped
+  fetch.py    reads the Section 3 and file list that watch cannot
   pipeline.py the glue, and the offline scorer
   export.py   the scored database -> the JSON the web page reads
   cli.py      the commands

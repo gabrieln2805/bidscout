@@ -42,6 +42,28 @@ def decide(
         elif outcome is _UNKNOWN:
             unresolved.append(gate.label)
 
+    # Nothing recognised at all is not a buyer who asks for nothing.
+    #
+    # A public tender states qualification criteria; a Section 3 from which the
+    # reader took not one requirement means the section was there and we did not
+    # understand it. Left alone, every gate reads "the buyer does not ask for
+    # one", nothing is unresolved, and the score alone decides — so an
+    # unreadable section comes out GO. That is ground rule 2 upside down, and
+    # it is the shape of failure that an empty or unparsed payload in the
+    # ``sections`` table would otherwise produce. The guard lives here rather
+    # than in whichever command fetched the section, because this is the one
+    # place that turns "we could not tell" into CHECK.
+    if rules.gates and not requirements:
+        reasons.append(
+            Reason(
+                "bidscout read this notice's Section 3 and recognised none of the "
+                "qualification criteria in it. That is not the same as a buyer who "
+                "asks for nothing: read the section yourself before deciding.",
+                outcome=_UNKNOWN,
+            )
+        )
+        unresolved.append("every requirement (nothing in Section 3 was recognised)")
+
     # A tender split into lots states requirements we have not matched to a
     # lot. The notice-level figure may be the total for every lot together,
     # while you would bid for one. Comparing your company against the total and

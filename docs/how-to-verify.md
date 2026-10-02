@@ -7,7 +7,7 @@ check.** No finding lives only in a chat window. Every claim gets a command.
 
 ```bash
 make install
-make check      # 123 offline tests + ruff
+make check      # 163 offline tests + ruff
 make demo       # the whole pipeline on captured fixtures, no network
 ```
 
@@ -15,7 +15,7 @@ make demo       # the whole pipeline on captured fixtures, no network
 
 | Command | Claim it tests | Needs the portal |
 |---|---|---|
-| `make test` | 123 offline tests on captured fixtures. Under a second. | no |
+| `make test` | 163 offline tests on captured fixtures. Under a second. | no |
 | `make lint` | `ruff` clean at line length 100. | no |
 | `make demo` | Store → extract → decide → rank, end to end. | no |
 | `bidscout score` | Ranking from the database only. | no |
@@ -27,8 +27,10 @@ make demo       # the whole pipeline on captured fixtures, no network
 | `make eval` | Coverage and precision per gate, on hand-labelled notices. | no |
 | `bidscout capture <id>` | A stored Section 3 becomes a new case to label. | no |
 | `bidscout watch --days 1` | The portal still answers as documented. | **yes** |
+| `bidscout fetch` | A stored notice's Section 3 and file list are read and stored. | **yes** |
+| `bidscout fetch` on a read database | "Nothing to fetch", and no client is built. | no |
 
-## What is proven and what is not (1 October 2026)
+## What is proven and what is not (2 October 2026)
 
 **Proven by the test suite, offline:**
 
@@ -51,6 +53,28 @@ make demo       # the whole pipeline on captured fixtures, no network
 - The page reads the schema version the exporter writes, and never puts
   portal text into the DOM as markup.
 - A notice with no stored Section 3 is skipped and counted, not scored.
+- A stored Section 3 the reader recognised **nothing** in gives CHECK, never
+  GO. One test puts a 2.700.000 Lei turnover rule in a Section 3 field no gate
+  maps to, stores it, and asserts the verdict is CHECK — because with no
+  requirements read, every gate would otherwise say "the buyer does not ask for
+  one" and the score alone would decide.
+- The fetch queue and the notices an unfiltered `score` skips are the same
+  list; a test asserts they agree. (Under `score --cpv` they diverge, because
+  the scorer then walks only the filtered set.)
+- Simplified notices are left out of the fetch queue in SQL, so they cannot
+  consume `--limit` and starve the notices that can be read.
+- `--limit 0` reads every notice rather than none; a negative limit is refused
+  rather than read by SQLite as no limit at all.
+- A fetch run survives one notice the portal refuses, and keeps what it had
+  already stored when something unexpected stops it.
+- A notice already read, including one the portal answered thinly, is never
+  asked for again.
+- Every group in the file list is read, including one the portal has not sent
+  before; an entry with no URL is counted rather than stored under an empty
+  key, and a field of the wrong shape never reaches SQLite.
+- A file list that fails to arrive does not unstore the Section 3 that did.
+- Every one of the above was checked by breaking the behaviour and watching the
+  named test fail. Seven mutations, seven catches, no false greens.
 - The raw portal payload survives a database round trip.
 - The accuracy harness counts nothing nobody labelled, and reports an
   invented figure separately from a missed one.
@@ -65,8 +89,12 @@ make demo       # the whole pipeline on captured fixtures, no network
   written by hand. Three cases is a smoke test, not a measurement. Capture
   thirty and the number starts meaning something.
 
-Run `bidscout watch --days 1` on your own machine to close that gap. If a
-field has moved, fix `docs/data-sources.md` in the same commit as the code.
+Run `bidscout watch --days 1 && bidscout fetch && bidscout score` on your own
+machine to close that gap. If a field has moved, fix `docs/data-sources.md` in
+the same commit as the code. Two things to confirm while you are there: whether
+`GetSection3View` wants `noticeId` or `cNoticeId` (`fetch` prefers the stored
+`noticeId` and falls back), and whether `GetDfNoticeSectionFiles` still returns
+the five groups it returned in September.
 
 ## Note for future sessions
 

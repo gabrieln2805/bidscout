@@ -1,0 +1,24 @@
+{
+  "dfNoticeDocs": [
+    {
+      "noticeDocumentUrl": "api-pub/files/noticedoc/28c82dc9e28547f795cc5ac9553e5a35",
+      "noticeDocumentName": "02 Caiet de sarcini servicii Digitalizare Chetani.pdf",
+      "noticeDocumentCode": "CN1096282/00003"
+    },
+    {
+      "noticeDocumentUrl": "api-pub/files/noticedoc/7b1f0a4c5d2e4f0b9a3c6d8e1f2a3b4c",
+      "noticeDocumentName": "03 Model contract.pdf",
+      "noticeDocumentCode": "CN1096282/00004"
+    }
+  ],
+  "duaeDocs": [
+    {
+      "noticeDocumentUrl": "api-pub/files/noticedoc/9f8e7d6c5b4a39281706f5e4d3c2b1a0",
+      "noticeDocumentName": "DUAE_CERERE_384463.xml",
+      "noticeDocumentCode": "CN1096282/00001"
+    }
+  ],
+  "contractingStrategyDocs": [],
+  "decisionDocs": null,
+  "exAnteDocs": []
+}

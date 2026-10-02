@@ -97,3 +97,84 @@ def test_capture_without_a_stored_section_is_an_instruction_not_a_traceback(
         store.save_notice(notice_from_item(notice_item))
     assert main(["--db", str(db), "capture", "1096282", "--cases", str(tmp_path / "c")]) == 1
     assert "no Section 3 stored" in capsys.readouterr().err
+
+
+def test_fetch_with_nothing_missing_builds_no_client(ready_db, capsys, monkeypatch) -> None:
+    """The queue is counted before a client is built, and that is asserted.
+
+    ``fetch`` needs the portal by definition, so this is the one path through
+    it that can be checked here. It matters twice over: a user running
+    ``fetch`` twice should not reach for the network to learn it has nothing to
+    do, and on Gabriel's machine — where the portal *is* reachable — a
+    regression here would make the test suite itself call e-licitatie.ro.
+    """
+    import bidscout.cli as cli
+
+    def _refuse() -> object:
+        raise AssertionError("fetch built a portal client with nothing to fetch")
+
+    monkeypatch.setattr(cli, "_make_client", _refuse)
+    db, _ = ready_db
+    assert main(["--db", str(db), "fetch"]) == 0
+    assert "Nothing to fetch" in capsys.readouterr().out
+
+
+def test_fetch_prints_the_report_for_what_it_read(tmp_path, notice_item, capsys, monkeypatch):
+    """The fetching branch itself, reached through the same seam with a fake.
+
+    Without this, every line of ``_cmd_fetch`` after the queue count would be
+    unreachable from the suite — including the ``--limit`` translation below.
+    """
+    import bidscout.cli as cli
+    from bidscout.pipeline import notice_from_item as from_item
+
+    class _Fake:
+        def __init__(self) -> None:
+            self.asked: list[str] = []
+
+        def get_section3(self, init_notice_id):
+            self.asked.append(str(init_notice_id))
+            return {"efCriteriaMin": "<p>cel putin <b>900.000,00 Lei</b></p>"}
+
+        def get_documents(self, init_notice_id):
+            return {}
+
+    fake = _Fake()
+    monkeypatch.setattr(cli, "_make_client", lambda: fake)
+    db = tmp_path / "t.sqlite3"
+    with Store(db) as store:
+        store.save_notice(from_item(notice_item))
+    assert main(["--db", str(db), "fetch"]) == 0
+    assert fake.asked == ["384463"]
+    assert "Section 3 is now on file for 1 of 1 notice" in capsys.readouterr().out
+
+
+def test_fetch_limit_zero_asks_for_everything_not_for_nothing(tmp_path, notice_item) -> None:
+    """``LIMIT 0`` would read nothing and report an empty queue on a full one.
+
+    The flag says 0 means every notice, so it has to become ``None`` before it
+    reaches SQLite. Asserting that argparse returned a 0 would prove nothing;
+    this asserts the translation and what the store then does with it.
+    """
+    from bidscout.cli import fetch_limit
+
+    assert fetch_limit(0) is None
+    assert fetch_limit(-5) is None
+    assert fetch_limit(50) == 50
+    assert fetch_limit(None) is None
+
+    db = tmp_path / "t.sqlite3"
+    with Store(db) as store:
+        for index in range(3):
+            store.save_notice(
+                notice_from_item({**notice_item, "cNoticeId": index, "noticeNo": f"CN{index}"})
+            )
+        assert len(list(store.notices_missing_section3(limit=fetch_limit(0)))) == 3
+        assert len(list(store.notices_missing_section3(limit=fetch_limit(2)))) == 2
+
+
+def test_fetch_defaults_to_a_bounded_run() -> None:
+    """A first pass over a large database should be polite without being asked."""
+    from bidscout.cli import build_parser
+
+    assert build_parser().parse_args(["fetch"]).limit == 50
