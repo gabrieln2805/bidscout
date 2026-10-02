@@ -116,14 +116,31 @@ def open_for_exploring(db_path: str | Path, warehouse: str | Path) -> Any:
     Attached under the same alias, the staging views resolve, so every layer —
     landing, staging, intermediate, core, app — can be browsed in one place.
     Read-only on both, so exploring can never change what the page is built from.
+
+    The session itself is an in-memory database that *can* be written, and the
+    two files are attached read-only into it. Opening the warehouse file with
+    ``read_only=True`` instead makes every ATTACH read-only too, and DuckDB's
+    web UI then cannot create the ``_duckdb_ui`` catalog it keeps its notebooks
+    in: "Catalog _duckdb_ui does not exist" (found 2 October 2026).
     """
     import duckdb  # noqa: PLC0415 - only exploring and the export need it
 
-    connection = duckdb.connect(str(warehouse), read_only=True)
-    landing = Path(db_path).resolve().as_posix().replace("'", "''")
+    connection = duckdb.connect(":memory:")
+    # The warehouse keeps its file name as its catalog name, because that is
+    # the catalog dbt compiled the staging views against.
+    catalog = Path(warehouse).stem
     connection.execute("INSTALL sqlite; LOAD sqlite;")
-    connection.execute(f"ATTACH '{landing}' AS {LANDING_ALIAS} (TYPE sqlite, READ_ONLY)")
+    connection.execute(f"ATTACH {_sql_text(warehouse)} AS \"{catalog}\" (READ_ONLY)")
+    connection.execute(
+        f"ATTACH {_sql_text(db_path)} AS {LANDING_ALIAS} (TYPE sqlite, READ_ONLY)"
+    )
+    connection.execute(f'USE "{catalog}"')
     return connection
+
+
+def _sql_text(path: str | Path) -> str:
+    """A file path as a SQL string literal."""
+    return "'" + Path(path).resolve().as_posix().replace("'", "''") + "'"
 
 
 def read_app_marts(warehouse: str | Path) -> dict[str, list[dict[str, Any]]]:

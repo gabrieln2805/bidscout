@@ -145,3 +145,22 @@ def test_exploring_sees_every_layer_and_changes_none(built) -> None:
             connection.execute("delete from bidscout_landing.main.notices")
     finally:
         connection.close()
+
+
+def test_the_web_ui_can_keep_its_own_state(built, tmp_path) -> None:
+    """DuckDB's UI attaches a writable catalog for its notebooks.
+
+    With the warehouse opened ``read_only=True`` that attach was read-only too,
+    and the UI failed with "Catalog _duckdb_ui does not exist". Our files stay
+    read-only; the session around them must not be.
+    """
+    from bidscout.warehouse import open_for_exploring
+
+    connection = open_for_exploring(built.with_suffix(".sqlite3"), built)
+    try:
+        connection.execute(f"ATTACH '{(tmp_path / 'ui.db').as_posix()}' AS _duckdb_ui")
+        connection.execute("create table _duckdb_ui.main.notebooks (id integer)")
+        # Unqualified names still land in the warehouse, as in the UI's editor.
+        assert connection.execute("select count(*) from app.app_tenders").fetchone()[0] == 4
+    finally:
+        connection.close()
