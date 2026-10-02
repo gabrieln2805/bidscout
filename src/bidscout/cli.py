@@ -66,6 +66,18 @@ def build_parser() -> argparse.ArgumentParser:
     watch.add_argument("--days", type=int, default=1)
     watch.add_argument("--once", action="store_true")
 
+    fetch = sub.add_parser(
+        "fetch",
+        help="read Section 3 and the file list for stored notices that have neither "
+        "(needs the portal)",
+    )
+    fetch.add_argument(
+        "--limit",
+        type=int,
+        default=50,
+        help="how many notices to read in one run; 0 or less means every one of them",
+    )
+
     evaluate = sub.add_parser(
         "eval", help="measure the extractor against the labelled cases (no request to SEAP)"
     )
@@ -97,6 +109,8 @@ def main(argv: list[str] | None = None) -> int:
         return _cmd_export(args)
     if args.command == "watch":
         return _cmd_watch(args)
+    if args.command == "fetch":
+        return _cmd_fetch(args)
     if args.command == "eval":
         return _cmd_eval(args)
     if args.command == "capture":
@@ -280,6 +294,68 @@ def _cmd_watch(args: argparse.Namespace) -> int:
             if store.save_notice(notice_from_item(item)):
                 new_count += 1
     print(f"{new_count} new notices stored.")
+    return 0
+
+
+def fetch_limit(value: int | None) -> int | None:
+    """Turn the ``--limit`` flag into what the store wants.
+
+    ``0`` on the command line means "every one of them", which the store spells
+    as ``None``; passing the 0 through would ask SQLite for ``LIMIT 0`` and
+    read nothing, while reporting an empty queue on a database full of unread
+    notices. A negative value is treated the same as 0, because SQLite reads a
+    negative LIMIT as no limit and the store now refuses one outright.
+    """
+    if value is None or value <= 0:
+        return None
+    return value
+
+
+def _make_client() -> Any:
+    """Build the real portal client.
+
+    A seam, and the only reason it exists is so a test can assert that a
+    command did **not** build one. ``fetch`` counts its queue before reaching
+    for the network, and that claim should be checkable rather than merely
+    written down.
+    """
+    from bidscout.sicap.client import SicapClient  # noqa: PLC0415 - avoids importing requests
+
+    return SicapClient()
+
+
+def _cmd_fetch(args: argparse.Namespace) -> int:
+    """Read Section 3 and the file list for the notices ``score`` is skipping.
+
+    ``watch`` stores notices the scorer then refuses to score, because the
+    search results carry no requirements. This is the command that closes that
+    circle, and it is the reason the database becomes worth reading.
+
+    It counts the queue **before** it builds a client, so a run with nothing to
+    do opens no socket. That is not only politeness: it makes the "nothing to
+    fetch" path checkable with the portal unreachable.
+    """
+    from bidscout.fetch import fetch_missing, format_fetch_report  # noqa: PLC0415 - local cost
+
+    limit = fetch_limit(args.limit)
+    with Store(args.db) as store:
+        waiting = store.count_missing_section3(exclude_simplified=True)
+        if waiting == 0:
+            simplified = store.count_missing_section3(simplified_only=True)
+            print(
+                "Nothing to fetch: every stored notice that can be read already has "
+                "its Section 3. Run `bidscout watch` to find new ones."
+            )
+            if simplified:
+                print(
+                    f"{simplified} simplified notices are still unread, and no detail "
+                    "endpoint is known for them (docs/data-sources.md, open item 1)."
+                )
+            return 0
+
+        run = fetch_missing(store, _make_client(), limit=limit)
+
+    print(format_fetch_report(run))
     return 0
 
 

@@ -243,6 +243,67 @@ class Store:
         for row in self.connection.execute(sql, params):
             yield _row_to_notice(row)
 
+    #: A notice is simplified when the portal marks it type 17 or numbers it
+    #: SCN…. No detail endpoint is known for either, so nothing can read one.
+    _SIMPLIFIED = "(n.notice_type_id = 17 OR UPPER(n.notice_no) LIKE 'SCN%')"
+
+    #: Stored notices with no row in ``sections`` — the ones nobody has read.
+    _MISSING_SECTION3 = """FROM notices n
+                           LEFT JOIN sections s ON s.c_notice_id = n.c_notice_id
+                           WHERE s.c_notice_id IS NULL"""
+
+    def notices_missing_section3(
+        self, limit: int | None = None, exclude_simplified: bool = False
+    ) -> Iterator[Notice]:
+        """Yield stored notices that have no Section 3, newest first.
+
+        With ``exclude_simplified`` left False this is the exact complement of
+        what an unfiltered ``score_stored`` skips and counts: a notice appears
+        here precisely because the scorer refuses to touch it.
+
+        ``exclude_simplified`` is what ``fetch`` uses, and it has to filter in
+        SQL rather than in the loop. Simplified notices can never be fetched,
+        so they never leave the queue; counted against ``limit`` they would sit
+        at the front of every run for ever and starve the notices that can
+        actually be read — 60% of what the portal publishes blocking the other
+        40%.
+
+        Newest first because a tender published today has a deadline worth
+        catching, while one from six weeks ago may already have closed.
+        """
+        sql = f"SELECT n.* {self._MISSING_SECTION3}"
+        if exclude_simplified:
+            sql += f" AND NOT {self._SIMPLIFIED}"
+        sql += " ORDER BY n.published_at DESC"
+        params: tuple[Any, ...] = ()
+        if limit is not None:
+            # Guarded rather than passed through: SQLite reads a negative LIMIT
+            # as no limit at all, so a caller's off-by-one would quietly turn a
+            # bounded run into a run over the whole database.
+            if limit < 0:
+                raise ValueError(f"limit must not be negative, got {limit}")
+            sql += " LIMIT ?"
+            params = (limit,)
+        for row in self.connection.execute(sql, params):
+            yield _row_to_notice(row)
+
+    def count_missing_section3(
+        self, exclude_simplified: bool = False, simplified_only: bool = False
+    ) -> int:
+        """How many stored notices have no Section 3.
+
+        Counted in SQL rather than by walking ``notices_missing_section3``,
+        because the caller wants a number and the rows carry a raw JSON column
+        each. ``simplified_only`` answers the opposite question: how large the
+        backlog is that no command can currently read.
+        """
+        sql = f"SELECT COUNT(*) AS n {self._MISSING_SECTION3}"
+        if simplified_only:
+            sql += f" AND {self._SIMPLIFIED}"
+        elif exclude_simplified:
+            sql += f" AND NOT {self._SIMPLIFIED}"
+        return int(self.connection.execute(sql).fetchone()["n"])
+
     def section3(self, c_notice_id: str) -> Section3 | None:
         """Return the stored Section 3, or None when the notice was never read."""
         row = self.connection.execute(

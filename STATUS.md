@@ -51,17 +51,18 @@ Two goals, in order:
 | Reading the requirements out of a tender | Working | 11 offline tests on fixtures |
 | Deciding GO / CHECK / NO-GO | Working, 3 gates + a score | 7 offline tests |
 | Storing what we find | Working | 7 offline tests |
+| Filling in what the search leaves out | Code written, **not run against the portal** | `bidscout fetch`, 30 offline tests |
 | Tracing a verdict to its sentences | Working, a `requirements` table | 10 offline tests |
 | Multi-lot tenders | Flagged, not read: they are held at CHECK | 5 offline tests |
 | Scoring from what we stored | Working, no requests to SEAP | 5 offline tests |
 | Measuring how well we read | Working, on 3 labelled notices | `make eval` + 17 tests |
-| The command line | Working offline | 11 offline tests |
+| The command line | Working offline | 15 offline tests |
 | Writing the bid documents | Not started | — |
 | A web page anyone can look at | Working, published from `docs/` | `make site` + 11 offline tests |
 | Direct purchases | Mapped, not wired in | — |
 | Reading the PDFs (the other 40%) | Not started | — |
 
-**123 automatic tests, all offline, all passing.** `ruff` clean at line
+**163 automatic tests, all offline, all passing.** `ruff` clean at line
 length 100.
 
 ---
@@ -80,6 +81,14 @@ make install && make demo
   from. No parser run, no profile, no network.
 - **Watch the portal** — polls a publication window and stores what is new.
   *Written but not yet run against the live portal.*
+- **Read what the search left out** — `bidscout fetch` takes every stored
+  notice with no Section 3, pulls the section and the file list, and stores
+  both. That is what turns a database full of notices the scorer skips into
+  one it can rank. A notice already read is never asked for again, so a second
+  run makes no request at all, and the command counts its queue before it
+  builds a client — a test asserts it builds none. `--limit` bounds one run
+  (default 50, `0` for all). *Written but not yet run against the live
+  portal.*
 - **See what the database holds** — `bidscout stats`.
 - **Show it to somebody** — one static page, `docs/index.html`, built by
   `bidscout export` from the scored database. Your company on the left, the
@@ -143,6 +152,34 @@ after the behaviour it defends.
 - A database written **before** a column existed is migrated by adding the
   column, never by rebuilding the table. Ground rule 3 applies to migrations:
   no stored row is dropped to make one simpler.
+- A Section 3 the reader **recognised nothing in** is CHECK, never GO. With no
+  requirements read, every gate says "the buyer does not ask for one", nothing
+  is unresolved, and the score alone decides — so an unreadable section used to
+  come out GO. The guard is in `decide`, which is the one place that turns "we
+  could not tell" into CHECK, so every command that stores a section is covered
+  by it and the raw payload is still kept. A test puts a 2.7 million turnover
+  rule in a Section 3 field no gate maps to and watches the verdict stay CHECK.
+  *(2 October 2026.)*
+- **Simplified notices are left out of the fetch queue in SQL**, not skipped
+  inside the loop. They can never be fetched, so they never leave the queue;
+  counted against `--limit` they would sit at the front of every run for ever
+  and starve the 40% of notices that can be read.
+- `--limit 0` means **every notice**, and is translated to "no limit" before it
+  reaches SQLite. Passed through, `LIMIT 0` would read nothing and report an
+  empty queue on a database full of unread notices. A negative limit is refused
+  by the store, because SQLite reads one as no limit at all.
+- The **file list is read group by group, not from a list of five group names**.
+  A group the portal adds later — a clarification, most likely — would
+  otherwise be dropped in silence.
+- A file-list entry with **no URL and no GUID** is counted, not stored. The
+  documents table is keyed on the GUID, so two such entries on one notice
+  would collide and `INSERT OR IGNORE` would swallow the second.
+- Every file-list field is **forced to a string** before it reaches SQLite,
+  which refuses to bind a list or an object and raises far from the portal
+  response that caused it.
+- **One notice the portal refuses does not end a fetch run**, and an unexpected
+  failure does end it, on purpose: repeating an unknown fault once per notice
+  would be fifty pointless requests to somebody else's server.
 
 ---
 
@@ -199,12 +236,18 @@ looks at. A pretty page over a parser nobody has measured is worth nothing.
      table with their citations.~~ **Done 1 October 2026.** A `requirements`
      table, written on every score, read by `bidscout requirements <id>`.
 
-4. **Wire the ingest pipeline end to end.** `watch` stores notices, but
+4. ~~**Wire the ingest pipeline end to end.** `watch` stores notices, but
    nothing fetches their Section 3 or their file list, so the database fills
-   with notices the scorer then skips. Add `bidscout fetch`: for every
-   stored notice with no Section 3, pull the section and the document list
-   and store both. Build and test it offline against a fake transport; run
-   it live on your own machine.
+   with notices the scorer then skips. Add `bidscout fetch`.~~
+   **Done 2 October 2026.** `bidscout fetch` works through every stored notice
+   with no Section 3, newest first, bounded by `--limit` (default 50, `0` for
+   all), skipping simplified notices it cannot read. Built and tested offline
+   against a fake transport driven through the real client, and every new test
+   was checked by breaking the behaviour it defends and watching it fail.
+   *Not run against the portal — that still waits on step 1.*
+   **Next: `bidscout watch --days 1 && bidscout fetch` on your machine**, then
+   `bidscout score`. That is the first time this project will have scored a
+   real tender.
 
 5. **Direct purchases.** The high-volume channel, already mapped, not yet
    connected. Model, store, and a short rule set — there is no Section 3 to
@@ -503,3 +546,161 @@ Next session starts at **immediate step 1** (live re-verify, Gabriel's machine).
 After that, **step 4** — `bidscout fetch` — is what turns the page from a demo
 into a thing worth opening every morning, because it is what stops the database
 filling with notices the scorer skips.
+
+### Session 7 — 2 October 2026 (cloud, no portal)
+
+Step 1 was skipped again: it needs the live portal and this run was in the
+cloud, where `e-licitatie.ro` is blocked at the gateway. Step 2's follow-up
+(label thirty real notices) and step 3's remaining bullet (secondary CPV codes)
+are blocked for the same reason. So this session took **step 4**, the first one
+that can be built honestly offline.
+
+**`bidscout fetch`** (`src/bidscout/fetch.py`) is the step between `watch` and
+`score`. `watch` stores what the search results carry, and the search results
+carry no requirements at all — so the scorer skipped every notice `watch` had
+ever stored, correctly, and a database full of notices answered nothing. `fetch`
+takes every stored notice with no Section 3, newest first, reads the section and
+the file list, and stores both. `--limit` bounds one run (default 50, `0` for
+all).
+
+`Store.notices_missing_section3` is the queue. Unfiltered it is the complement
+of what an unfiltered `score_stored` skips and counts, and a test asserts the
+two agree on the same database. (They do diverge under `score --cpv`, which
+walks only the filtered set — the agreement claim is about the unfiltered case.)
+
+**The bug this nearly shipped with, and how it was caught.**
+
+The first version of `fetch` refused to store a Section 3 that came back
+carrying no text, on the reasoning that an empty section in the database reads
+as a buyer who asks for nothing: every gate absent, nothing unresolved, score
+over the threshold, verdict **GO** on a notice nobody read. That reasoning is
+right. The guard was in the wrong place, and a review pass found three holes in
+it before the patch was packaged:
+
+1. The guard was a **list of Section 3 field names**, and it was wider than the
+   list the extractor actually reads. A payload whose only prose sat in
+   `efCriteriaBold1` — by its name, exactly where a bold financial criterion
+   goes — passed the guard, was stored, and then scored **GO, 70**, on a notice
+   where the buyer had written a 2.700.000 Lei turnover requirement. The guard
+   defended the case it was written for and not the case that matters.
+2. A notice whose section came back thin was **re-requested on every future
+   run**, for ever, because nothing was written and it never left the queue —
+   an unbounded repeat against somebody else's server, which is the very thing
+   this module's docstring says it refuses to do.
+3. `bidscout capture <id> --live` stores whatever the portal returns with no
+   guard at all, so the same empty payload could reach the database by another
+   door. A guard in `fetch` could never have been the whole story.
+
+**The fix moved the guard to where it belongs.** `decide` now returns CHECK when
+it recognised *no* requirements at all in a section, with a reason that says so
+and sends the reader to the section itself. That is ground rule 2 applied in the
+one module that exists to apply it, and it holds for any payload shape and any
+command that stored it — `fetch`, `capture --live`, or a hand-written row.
+`fetch` then does the simpler and more correct thing: it stores what arrived,
+exactly as it arrived (ground rule 3), the notice leaves the queue, and a later
+parser fix is replayed from the row instead of the notice having been discarded.
+`has_section3_text` and its field list are gone.
+
+Three smaller faults found in the same pass and fixed:
+
+- **Simplified notices never left the queue and consumed `--limit`.** They can't
+  be fetched — no detail endpoint is known — so with 60% of the market
+  simplified, `bidscout fetch` could print "0 of 50" for ever while never
+  reaching a readable notice. They are now excluded in SQL, before the `LIMIT`,
+  and reported as a backlog figure instead.
+- **`--limit 0` would have read nothing.** It is documented as "every notice",
+  but passed straight through it becomes `LIMIT 0`: zero rows, and "Nothing to
+  fetch" printed on a database full of unread notices. It is translated to "no
+  limit" in `fetch_limit`, which is tested directly; a negative limit is now
+  refused by the store, because SQLite reads one as no limit at all.
+- **A file-list field of the wrong shape aborted the run.** Every field out of
+  the portal is forced to a string; `noticeDocumentCode` was not, so a code
+  arriving as an object reached SQLite and raised after the section had already
+  been stored.
+
+**Three tests were rewritten because they passed for the wrong reason.** One
+asserted that argparse returns the number it was given rather than that the
+limit translation works. One claimed to prove `fetch` opens no socket when
+there is nothing to do, but would still have passed with the client built first
+— and on Gabriel's machine, where the portal is reachable, that regression would
+have made `pytest` itself call e-licitatie.ro; `_make_client` is now a seam the
+test asserts against. One asserted a field-list relation in the harmless
+direction only. A fourth, `test_fetch_is_not_listed_as_an_offline_command`, was
+deleted outright: `OFFLINE_COMMANDS` in `cli.py` is read by nothing in `src/`,
+so the test could only ever fail if somebody edited a dead constant.
+
+**Every new test was then checked by breaking the behaviour it defends.** Seven
+mutations — the engine guard removed, the simplified filter made a no-op, the
+limit translation removed, the client built too early, the string coercion
+dropped, the thin-payload refusal restored, the document groups hard-coded back
+to five — and each one was caught by exactly the test named after it, and by no
+others. The first attempt at this check was itself wrong: the mutations ran in a
+copied directory whose venv still pointed its editable install at the original
+source, so all 163 tests passed seven times in a row and proved nothing.
+
+**123 tests before, 163 after. `ruff` clean.** No existing test was changed or
+weakened. `make demo`, `make site` and `make check` all still run end to end.
+
+Could not do, and why:
+
+- **No live check of anything**, a fifth time. Nothing in this session touched
+  the portal. Every call in `sicap/client.py` — including the two `fetch` now
+  depends on, `GetSection3View` and `GetDfNoticeSectionFiles` — is still only as
+  good as the 20 September spike notes.
+- **Whether the section endpoint wants `noticeId` or `cNoticeId`** is still
+  unconfirmed. `fetch` makes the same choice `capture` does — prefer the stored
+  init id, fall back to the notice id — so if it is wrong, it is wrong in one
+  documented place and in both commands at once.
+- **The fetching branch of `bidscout fetch` is only tested against a fake.**
+  There is no way around that here; the first real exercise is on your machine.
+- **`docs/data.json` was deliberately left alone.** `make site` regenerates it
+  with a new timestamp and no content change; committing that would be churn.
+
+Found and not fixed (small, and not this item's job):
+
+- `OFFLINE_COMMANDS` in `src/bidscout/cli.py` is referenced nowhere. The split
+  between commands that need the portal and commands that do not is enforced by
+  hand in `--help` and in the docs tables. Either wire it up or delete it.
+
+---
+
+## Where we are at (end of session 7)
+
+The offline half of this project is finished and measured: 163 tests, `ruff`
+clean, a static page, an accuracy harness, and now a complete ingest path —
+`watch` finds notices, `fetch` reads them, `score` ranks them, `export`
+publishes them. Every one of those four runs from the database or a fixture.
+
+One real defect class was closed this session, and it was not in the new
+feature: a stored Section 3 that the reader could not understand used to score
+GO. That was reachable before today by `capture --live` and by any hand-written
+row; `fetch` would simply have made it common. It is now CHECK.
+
+The live half has still never run. Five sessions have now written code against
+spike notes from 20 September without a single call to `e-licitatie.ro`. That is
+the only thing standing between a working demo and a working tool.
+
+## Next actions in the next task
+
+1. **On Gabriel's machine, with the portal reachable** — the whole point now:
+   ```
+   bidscout watch --days 1
+   bidscout fetch
+   bidscout score
+   ```
+   Fix whatever has moved, and correct `docs/data-sources.md`. In particular
+   confirm whether `GetSection3View` wants `noticeId` or `cNoticeId`, and
+   whether `GetDfNoticeSectionFiles` still returns the five groups it did in
+   September. This is immediate step 1, and it now unblocks three other items.
+   Watch for notices that come back CHECK with "recognised none of the
+   qualification criteria": each one is either a field name that has moved or a
+   gate the extractor needs to learn.
+2. **Then, still live:** `bidscout capture <id> --live` on about thirty notices
+   and label them, so the "60% coverage" figure becomes a measurement instead of
+   a guess (immediate step 2's follow-up).
+3. **Then, with one live look at a notice that has one:** store secondary CPV
+   codes (immediate step 3's remaining bullet), and read the lot contents via
+   `GetSection22LotList`.
+4. **Offline, if a cloud session comes first:** immediate step 5, direct
+   purchases — mapped in `docs/data-sources.md` section 2.5, no Section 3 to
+   read, so the gates differ and it needs its own short rule set.
