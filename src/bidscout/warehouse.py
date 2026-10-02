@@ -110,6 +110,22 @@ def _quote(value: str) -> str:
     return "'" + value.replace("'", "''") + "'"
 
 
+def open_for_exploring(db_path: str | Path, warehouse: str | Path) -> Any:
+    """Open the warehouse read-only, with landing attached the way dbt attaches it.
+
+    Attached under the same alias, the staging views resolve, so every layer —
+    landing, staging, intermediate, core, app — can be browsed in one place.
+    Read-only on both, so exploring can never change what the page is built from.
+    """
+    import duckdb  # noqa: PLC0415 - only exploring and the export need it
+
+    connection = duckdb.connect(str(warehouse), read_only=True)
+    landing = Path(db_path).resolve().as_posix().replace("'", "''")
+    connection.execute("INSTALL sqlite; LOAD sqlite;")
+    connection.execute(f"ATTACH '{landing}' AS {LANDING_ALIAS} (TYPE sqlite, READ_ONLY)")
+    return connection
+
+
 def read_app_marts(warehouse: str | Path) -> dict[str, list[dict[str, Any]]]:
     """Return every row of every ``app`` mart, as plain dicts.
 

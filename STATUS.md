@@ -53,10 +53,11 @@ concession notices listed as unread. All of it is in `site/data.json`.
 | Measuring how well we read | Harness works, only 3 labelled notices | `make eval` |
 | Reading the PDFs | Not started | — |
 
-**185 automatic tests, all offline, all passing. `ruff` clean.**
+**186 automatic tests, all offline, all passing. `ruff` clean.**
 
 Where to look: data sources in `docs/data-sources.md`, tables in
 `docs/data-model.md`, how to check any claim in `docs/how-to-verify.md`.
+**To see the data:** `make explore` opens every table in DuckDB's web UI.
 
 ---
 

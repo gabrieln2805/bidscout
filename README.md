@@ -28,6 +28,7 @@ site/data.json  →  site/index.html  the page reads the app_* marts only
 
 - **What the portal is and how we call it:** `docs/data-sources.md`
 - **Every table, its grain, and which ones the app reads:** `docs/data-model.md`
+- **See the tables themselves:** `make explore` — DuckDB's web UI on the warehouse
 
 ## Try it
 
@@ -115,13 +116,14 @@ decision appears only on a notice that was read and scored (the dbt test
 | `bidscout fetch` | Read Section 3 and the file list for landed notices | **yes** |
 | `bidscout score` | Rank landed tenders | no |
 | `bidscout transform` | Build the dbt warehouse from landing | no |
+| `bidscout explore` | Browse every table in DuckDB's web UI, read-only (`make explore`) | no |
 | `bidscout export` | score → transform → `site/data.json` from the app marts | no |
 | `bidscout explain <id>` | Every reason behind one verdict, with quotes | no |
 | `bidscout requirements <id>` | The sentences the last score read, with their field | no |
 | `bidscout stats` | What landing holds | no |
 | `bidscout eval` | Measure the extractor against the labelled cases | no |
 | `bidscout capture <id> [--live]` | Turn a Section 3 into a new case to label | `--live` only |
-| `make check` | 185 offline tests + `ruff` | no |
+| `make check` | 186 offline tests + `ruff` | no |
 | `make docs` | Browse the warehouse models and lineage (dbt docs) | no |
 
 ## Layout

@@ -123,3 +123,25 @@ def test_a_broken_contract_stops_the_build(tmp_path) -> None:
 def test_a_missing_landing_file_is_named(tmp_path) -> None:
     with pytest.raises(WarehouseBuildFailed, match="no landing database"):
         transform(tmp_path / "nowhere.sqlite3")
+
+
+def test_exploring_sees_every_layer_and_changes_none(built) -> None:
+    """`bidscout explore` browses landing to app marts in one place, read-only."""
+    from bidscout.warehouse import open_for_exploring
+
+    connection = open_for_exploring(built.with_suffix(".sqlite3"), built)
+    try:
+        for table in (
+            "bidscout_landing.main.notices",
+            "staging.stg_sicap__notices",
+            "intermediate.int_notices__read_status",
+            "core.fct_notices",
+            "app.app_tenders",
+        ):
+            assert connection.execute(f"select count(*) from {table}").fetchone()[0] == 4
+        with pytest.raises(duckdb.Error):
+            connection.execute("delete from core.fct_notices")
+        with pytest.raises(duckdb.Error):
+            connection.execute("delete from bidscout_landing.main.notices")
+    finally:
+        connection.close()

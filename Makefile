@@ -1,4 +1,4 @@
-.PHONY: install test lint check ingest site demo demo-site eval serve docs clean
+.PHONY: install test lint check ingest site demo demo-site eval serve explore docs clean
 
 # The venv keeps its executables in Scripts/ on Windows and bin/ elsewhere.
 ifeq ($(OS),Windows_NT)
@@ -60,7 +60,13 @@ serve:
 	@echo "http://localhost:8000"
 	$(BIN)/python -m http.server 8000 --directory site
 
-# Browse the warehouse: every model, column, test and the lineage graph.
+# Browse the data itself: every table from landing to the app marts, in
+# DuckDB's web UI at http://localhost:4213, read-only. Builds the warehouse
+# first if it does not exist yet. Ctrl+C to stop.
+explore:
+	$(BIN)/bidscout --db $(DB) explore
+
+# Browse the warehouse's definitions: every model, column, test, and the lineage graph.
 docs:
 	$(BIN)/dbt docs generate --project-dir warehouse --profiles-dir warehouse
 	$(BIN)/dbt docs serve --project-dir warehouse --profiles-dir warehouse
