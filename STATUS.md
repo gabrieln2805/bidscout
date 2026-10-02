@@ -673,20 +673,26 @@ first live run in the project's history, and it stopped at the first request.
 `POST /api-pub/NoticeCommon/GetCNoticeList/`. Not a moved field, not a bad
 filter: the portal refused the request outright.
 
-**The likely cause is a gap in the written record, not in the code.** Session 1
+**Found, same day.** Pasting `getServerTime` into a browser returned the answer
+in plain text: `403 {"message": "Access Denied: Referrer cannot be null."}`. The
+portal requires a `Referer` header on every endpoint. `curl` with its own
+User-Agent was refused too, so this was never about our User-Agent — and the
+public API is not gone. One header, now sent by `RequestsTransport` and held by
+a test.
+
+**It was a gap in the written record, not in the code.** Session 1
 (20 September) found *three* traps: a required header, a filter the server
 ignores, and a cap that looks like a count. The rebuild carried two of them into
 `filters.py` and `_refuse_capped_result`. **The required header was never
 re-implemented**, because session 1's code was lost and
 `docs/data-sources.md` never recorded which header it was — it only says the
 API was called "from the browser, same origin". That is the one trap with no
-test, and it is the one that fired.
+test, and it is the one that fired. It now has a name, a line in
+`docs/data-sources.md` section 2, and a test.
 
-Not yet known, and the next thing to establish: whether the portal refuses
-*our* User-Agent specifically, refuses non-browser clients generally, or has
-closed the public API altogether. Those are three different problems with three
-different answers, and the third would mean rewriting section 2 of
-`docs/data-sources.md` rather than patching the client.
+The lesson is cheap to state and was expensive to learn twice: a trap recorded
+as prose is a trap that comes back. The other two traps from that spike survived
+the rebuild because they were written as code.
 
 **`fetch` and `score` were not reached.** `fetch` correctly made no request
 (empty database). `score` stopped because there is no `profile.yaml` on the
@@ -719,12 +725,9 @@ good as the 20 September spike notes.
 
 ## Next actions in the next task
 
-1. **Diagnose the 403.** Everything else waits on this. Establish which of the
-   three it is — our User-Agent, non-browser clients in general, or the public
-   API being gone — then record the answer in `docs/data-sources.md` whatever it
-   turns out to be. If a header is needed, it gets a test; if the portal is
-   deliberately refusing tools, that is a decision to take knowingly and write
-   down, not to work around quietly.
+1. **Re-run `watch` with the `Referer` fix** and see how far it gets. This is
+   the first real test of everything downstream: field names, the cap, Section 3
+   shapes.
 2. **Fill in `profile.yaml`** from `profile.example.yaml`: average turnover over
    three financial years, largest evidenced similar contract, cash available for
    a participation guarantee, contract-size range. Every verdict is measured
