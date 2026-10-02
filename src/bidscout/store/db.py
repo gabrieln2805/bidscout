@@ -247,10 +247,14 @@ class Store:
     #: SCN…. No detail endpoint is known for either, so nothing can read one.
     _SIMPLIFIED = "(n.notice_type_id = 17 OR UPPER(n.notice_no) LIKE 'SCN%')"
 
-    #: Stored notices with no row in ``sections`` — the ones nobody has read.
+    #: Stored notices nobody has read: no row in ``sections``, or a row holding
+    #: the portal's "not found" answer instead of a section. The 2 October run
+    #: stored one of those before the client learnt to refuse them, and such a
+    #: row has to go back in the queue rather than leave it for ever.
     _MISSING_SECTION3 = """FROM notices n
                            LEFT JOIN sections s ON s.c_notice_id = n.c_notice_id
-                           WHERE s.c_notice_id IS NULL"""
+                           WHERE (s.c_notice_id IS NULL
+                                  OR json_extract(s.section3_raw, '$.hasError') = 1)"""
 
     def notices_missing_section3(
         self, limit: int | None = None, exclude_simplified: bool = False
@@ -311,7 +315,13 @@ class Store:
         ).fetchone()
         if row is None:
             return None
-        return Section3(init_notice_id=c_notice_id, raw=json.loads(row["section3_raw"]))
+        raw = json.loads(row["section3_raw"])
+        if isinstance(raw, dict) and raw.get("hasError"):
+            # The portal's "not found", stored before the client refused it. It
+            # is not a section, and read as one it would be a buyer who asks for
+            # nothing. The row is kept and ``fetch`` asks again.
+            return None
+        return Section3(init_notice_id=c_notice_id, raw=raw)
 
     def requirements(self, c_notice_id: str) -> list[Requirement]:
         """Return the stored requirements for one notice, newest extraction first.

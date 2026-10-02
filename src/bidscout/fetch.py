@@ -50,9 +50,9 @@ class NoticeReader(Protocol):
     whole suite runs with the portal unreachable.
     """
 
-    def get_section3(self, init_notice_id: int | str) -> dict[str, Any]: ...
+    def get_section3(self, c_notice_id: int | str) -> dict[str, Any]: ...
 
-    def get_documents(self, init_notice_id: int | str) -> dict[str, Any]: ...
+    def get_documents(self, c_notice_id: int | str) -> dict[str, Any]: ...
 
 
 @dataclass
@@ -164,15 +164,12 @@ def _fetch_one(
     run: FetchRun,
 ) -> None:
     """Fetch one notice's section and files, recording whatever happened."""
-    # Section 3 is keyed by the *init* notice id, a different number from the
-    # cNoticeId in the search results. Which of the two the endpoint really
-    # wants is still unconfirmed against the live portal (STATUS.md, immediate
-    # step 1), so prefer the stored init id and fall back to the notice id —
-    # the same choice ``capture`` makes, for the same reason.
-    init_id = notice.init_notice_id or notice.c_notice_id
-
+    # Both endpoints take the cNoticeId, although the parameter is called
+    # ``initNoticeId``. Settled live on 2 October 2026; see
+    # ``SicapClient.get_section3``. Sending the noticeId was the first live
+    # bug: the portal answers "not found" with HTTP 200.
     try:
-        raw = client.get_section3(init_id)
+        raw = client.get_section3(notice.c_notice_id)
     except BidscoutError as exc:
         run.failed.append((label, str(exc)))
         return
@@ -185,7 +182,7 @@ def _fetch_one(
     run.fetched.append(label)
 
     try:
-        payload = client.get_documents(init_id)
+        payload = client.get_documents(notice.c_notice_id)
     except BidscoutError as exc:
         run.documents_failed.append((label, str(exc)))
         return

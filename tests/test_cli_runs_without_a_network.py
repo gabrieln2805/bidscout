@@ -119,6 +119,21 @@ def test_fetch_with_nothing_missing_builds_no_client(ready_db, capsys, monkeypat
     assert "Nothing to fetch" in capsys.readouterr().out
 
 
+def test_fetch_on_an_empty_database_says_it_is_empty(tmp_path, capsys, monkeypatch) -> None:
+    """Found on the first live run: "every stored notice already has its Section 3"
+    is true of zero notices and tells the reader nothing."""
+    import bidscout.cli as cli
+
+    def _refuse() -> object:
+        raise AssertionError("fetch built a portal client for an empty database")
+
+    monkeypatch.setattr(cli, "_make_client", _refuse)
+    assert main(["--db", str(tmp_path / "empty.sqlite3"), "fetch"]) == 0
+    out = capsys.readouterr().out
+    assert "holds no notices" in out
+    assert "Nothing to fetch" not in out
+
+
 def test_fetch_prints_the_report_for_what_it_read(tmp_path, notice_item, capsys, monkeypatch):
     """The fetching branch itself, reached through the same seam with a fake.
 
@@ -145,7 +160,7 @@ def test_fetch_prints_the_report_for_what_it_read(tmp_path, notice_item, capsys,
     with Store(db) as store:
         store.save_notice(from_item(notice_item))
     assert main(["--db", str(db), "fetch"]) == 0
-    assert fake.asked == ["384463"]
+    assert fake.asked == ["1096282"]
     assert "Section 3 is now on file for 1 of 1 notice" in capsys.readouterr().out
 
 

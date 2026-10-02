@@ -99,7 +99,7 @@ def test_what_watch_left_unscorable_fetch_makes_scorable(
     one_unread, section3_full, strong_profile, rules
 ) -> None:
     """End to end, and the whole reason this command exists."""
-    portal = _Portal(sections={"384463": section3_full.raw})
+    portal = _Portal(sections={"1096282": section3_full.raw})
     with Store(one_unread) as store:
         before = score_stored(store, strong_profile, rules, today=TODAY)
         assert (before.scored, len(before.skipped_unread)) == (0, 1)
@@ -111,18 +111,22 @@ def test_what_watch_left_unscorable_fetch_makes_scorable(
         assert (after.scored, after.skipped_unread) == (1, [])
 
 
-def test_the_section_is_asked_for_by_init_notice_id(one_unread, section3_full) -> None:
-    """The section endpoint wants ``noticeId``; the database keys on ``cNoticeId``."""
-    portal = _Portal(sections={"384463": section3_full.raw})
+def test_the_section_is_asked_for_by_c_notice_id(one_unread, section3_full) -> None:
+    """The parameter is called ``initNoticeId`` and takes the ``cNoticeId``.
+
+    Confirmed live on 2 October 2026. Sending the ``noticeId`` (384463 here)
+    was the first bug the live portal found: it answers "not found" with 200.
+    """
+    portal = _Portal(sections={"1096282": section3_full.raw})
     with Store(one_unread) as store:
         fetch_missing(store, _client(portal))
-        assert portal.section_calls == ["384463"]
+        assert portal.section_calls == ["1096282"]
         assert store.section3("1096282") is not None
 
 
 def test_the_payload_is_stored_exactly_as_it_arrived(one_unread, section3_full) -> None:
     """Ground rule 3: a parser rewrite is replayed from this row."""
-    portal = _Portal(sections={"384463": section3_full.raw})
+    portal = _Portal(sections={"1096282": section3_full.raw})
     with Store(one_unread) as store:
         fetch_missing(store, _client(portal))
         assert store.section3("1096282").raw == section3_full.raw
@@ -144,7 +148,7 @@ def test_a_section_the_reader_cannot_parse_is_still_stored(one_unread) -> None:
 
 def test_a_notice_already_read_is_never_asked_for_again(one_unread, section3_full) -> None:
     """A second run with nothing new to do must make no request at all."""
-    portal = _Portal(sections={"384463": section3_full.raw})
+    portal = _Portal(sections={"1096282": section3_full.raw})
     with Store(one_unread) as store:
         fetch_missing(store, _client(portal))
         portal.section_calls.clear()
@@ -165,7 +169,7 @@ def test_an_unparsed_section_is_not_re_requested_either(one_unread) -> None:
         fetch_missing(store, _client(portal))
         fetch_missing(store, _client(portal))
         fetch_missing(store, _client(portal))
-    assert portal.section_calls == ["384463"]
+    assert portal.section_calls == ["1096282"]
 
 
 # ------------------------------------------------------- what it refuses to ask
@@ -192,7 +196,7 @@ def test_simplified_notices_cannot_starve_the_ones_that_can_be_read(
     would sit at the front of every run for ever and the readable notices
     behind them would never be reached at all.
     """
-    portal = _Portal(sections={"384463": section3_full.raw})
+    portal = _Portal(sections={"1096282": section3_full.raw})
     with Store(tmp_path / "t.sqlite3") as store:
         for index in range(3):
             store.save_notice(
@@ -226,8 +230,8 @@ def test_one_notice_the_portal_refuses_does_not_end_the_run(
 ) -> None:
     """Forty-nine good notices are not thrown away because the fiftieth is bad."""
     portal = _Portal(
-        sections={"384463": section3_full.raw},
-        raises={"999": NoticeNotFound("no Section 3 for initNoticeId=999")},
+        sections={"1096282": section3_full.raw},
+        raises={"1096999": NoticeNotFound("no Section 3 for cNoticeId=1096999")},
     )
     with Store(tmp_path / "t.sqlite3") as store:
         store.save_notice(notice_from_item(notice_item))
@@ -245,7 +249,7 @@ def test_one_notice_the_portal_refuses_does_not_end_the_run(
         assert store.section3("1096999") is None
     assert run.fetched == ["CN1096282"]
     assert [label for label, _ in run.failed] == ["CN1096999"]
-    assert "no Section 3 for initNoticeId=999" in format_fetch_report(run)
+    assert "no Section 3 for cNoticeId=1096999" in format_fetch_report(run)
 
 
 def test_an_unexpected_failure_keeps_what_was_already_stored(
@@ -261,8 +265,8 @@ def test_an_unexpected_failure_keeps_what_was_already_stored(
     # to put it genuinely before the abort. Without that the test would pass for
     # the wrong reason: nothing stored, because nothing was reached.
     portal = _Portal(
-        sections={"384463": section3_full.raw},
-        raises={"999": RuntimeError("the transport broke")},
+        sections={"1096282": section3_full.raw},
+        raises={"1096999": RuntimeError("the transport broke")},
     )
     with Store(tmp_path / "t.sqlite3") as store:
         store.save_notice(notice_from_item(notice_item))
@@ -318,7 +322,7 @@ def test_the_queue_is_newest_first(tmp_path, notice_item) -> None:
 
 def test_a_limit_bounds_one_run(tmp_path, notice_item, section3_full) -> None:
     """A first pass over a large database is a series of polite visits."""
-    portal = _Portal(sections={"384463": section3_full.raw})
+    portal = _Portal(sections={"1096282": section3_full.raw})
     with Store(tmp_path / "t.sqlite3") as store:
         for index in range(4):
             store.save_notice(
@@ -367,7 +371,7 @@ def test_counting_the_queue_agrees_with_walking_it(tmp_path, notice_item) -> Non
 
 def test_the_report_reads_properly_when_there_is_only_one(one_unread, section3_full) -> None:
     """The report is the only face ``fetch`` has; it should not read like a draft."""
-    portal = _Portal(sections={"384463": section3_full.raw})
+    portal = _Portal(sections={"1096282": section3_full.raw})
     with Store(one_unread) as store:
         report = format_fetch_report(fetch_missing(store, _client(portal)))
     assert "1 of 1 notice," in report
@@ -375,7 +379,7 @@ def test_the_report_reads_properly_when_there_is_only_one(one_unread, section3_f
 
 
 def test_the_report_tells_the_reader_what_to_run_next(one_unread, section3_full) -> None:
-    portal = _Portal(sections={"384463": section3_full.raw})
+    portal = _Portal(sections={"1096282": section3_full.raw})
     with Store(one_unread) as store:
         report = format_fetch_report(fetch_missing(store, _client(portal)))
     assert "bidscout score" in report
