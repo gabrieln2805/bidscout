@@ -140,7 +140,8 @@ with the landing file attached as `bidscout_landing`. Every layer is there to
 browse and query: `bidscout_landing.main` (raw), `staging`, `intermediate`,
 `core`, `app`. Both files are opened **read-only**, so nothing you run there
 can change what the page is built from. It builds the warehouse first if there
-is none; `--build` rebuilds it.
+is none; `--build` rebuilds it. `--port` picks another port when 4213 is taken;
+it says so and stops if an earlier `explore` is still running.
 
 While it runs, the warehouse file is locked (Windows), so `make site` /
 `bidscout export` cannot rebuild it. Stop it with Ctrl+C first. The first run

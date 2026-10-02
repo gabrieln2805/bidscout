@@ -82,6 +82,7 @@ def build_parser() -> argparse.ArgumentParser:
     explore.add_argument(
         "--no-browser", action="store_true", help="start the UI server without opening a tab"
     )
+    explore.add_argument("--port", type=int, default=4213, help="local port for the UI")
 
     sub.add_parser("stats", help="what the database holds")
 
@@ -312,8 +313,19 @@ def _cmd_explore(args: argparse.Namespace) -> int:
             return rc
 
     connection = open_for_exploring(args.db, warehouse)
+    connection.execute(f"SET ui_local_port = {int(args.port)}")
     start = "start_ui_server" if args.no_browser else "start_ui"
     message = connection.execute(f"CALL {start}()").fetchone()[0]
+    if "already running" in message:
+        # Another explore holds the port. DuckDB says so and serves nothing
+        # from here, so waiting would look like a working UI that is not ours.
+        connection.close()
+        print(
+            f"{message}: port {args.port} is taken, probably by an earlier `bidscout "
+            "explore`. Stop that one (Ctrl+C in its terminal), or pass --port.",
+            file=sys.stderr,
+        )
+        return 1
     print(message, flush=True)
     print(
         f"Warehouse {warehouse.as_posix()}, landing {Path(args.db).as_posix()} as "
