@@ -32,6 +32,18 @@ NOTICE_TYPE_SIMPLIFIED = 17
 
 USER_AGENT = "bidscout/0.3 (public tender decision aid; contact: see repository README)"
 
+#: The portal refuses any request without a ``Referer`` and says so plainly:
+#: ``403 {"message": "Access Denied: Referrer cannot be null."}``. Every
+#: endpoint is affected, including ``getServerTime``, so without this header
+#: nothing works at all — which is what the 2 October run found. This is the
+#: "required header" the 20 September spike noted and whose name was lost when
+#: that session's code never reached disk.
+#:
+#: It is not a disguise: the User-Agent above still says exactly what this is.
+#: The header only tells the portal the request concerns its own site, which is
+#: the anti-hotlinking check the error message describes.
+REFERER = "https://www.e-licitatie.ro/"
+
 
 class Transport(Protocol):
     """The small slice of ``requests`` that the client actually uses.
@@ -52,7 +64,9 @@ class RequestsTransport:
         import requests  # noqa: PLC0415 - kept local so offline tests need no install
 
         self._session = requests.Session()
-        self._session.headers.update({"User-Agent": USER_AGENT, "Accept": "application/json"})
+        self._session.headers.update(
+            {"User-Agent": USER_AGENT, "Accept": "application/json", "Referer": REFERER}
+        )
         self._timeout = timeout
 
     def get(self, url: str, params: dict[str, Any] | None = None) -> Any:

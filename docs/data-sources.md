@@ -41,6 +41,18 @@ JSON first, and the PDF is the proof, not the source.
 Base: `https://www.e-licitatie.ro/api-pub/`. No API key. No cookie needed.
 Content type `application/json`.
 
+**A `Referer` header is required on every endpoint.** Without it the portal
+answers any request, including `getServerTime`, with:
+
+```
+403 {"message": "Access Denied: Referrer cannot be null."}
+```
+
+`Referer: https://www.e-licitatie.ro/` is enough. *Confirmed live on 2 October
+2026* — this is the "required header" of the 20 September spike, whose name was
+lost with that session's code. Held by
+`tests/test_the_portal_refuses_a_request_with_no_referer.py`.
+
 ### 2.1 Search contract notices
 
 ```
