@@ -664,6 +664,41 @@ Found and not fixed (small, and not this item's job):
 
 ---
 
+### Session 7b — 2 October 2026 (Gabriel's machine, portal reachable)
+
+The patch applied cleanly. **163 tests pass, `ruff` clean, on Windows.** Then the
+first live run in the project's history, and it stopped at the first request.
+
+**`bidscout watch --days 1` → HTTP 403 Forbidden** on
+`POST /api-pub/NoticeCommon/GetCNoticeList/`. Not a moved field, not a bad
+filter: the portal refused the request outright.
+
+**The likely cause is a gap in the written record, not in the code.** Session 1
+(20 September) found *three* traps: a required header, a filter the server
+ignores, and a cap that looks like a count. The rebuild carried two of them into
+`filters.py` and `_refuse_capped_result`. **The required header was never
+re-implemented**, because session 1's code was lost and
+`docs/data-sources.md` never recorded which header it was — it only says the
+API was called "from the browser, same origin". That is the one trap with no
+test, and it is the one that fired.
+
+Not yet known, and the next thing to establish: whether the portal refuses
+*our* User-Agent specifically, refuses non-browser clients generally, or has
+closed the public API altogether. Those are three different problems with three
+different answers, and the third would mean rewriting section 2 of
+`docs/data-sources.md` rather than patching the client.
+
+**`fetch` and `score` were not reached.** `fetch` correctly made no request
+(empty database). `score` stopped because there is no `profile.yaml` on the
+machine yet — Gabriel's own file, four real figures, still to be filled in.
+
+**One small bug found by running it.** On an **empty** database `fetch` prints
+"every stored notice that can be read already has its Section 3", which is true
+of zero notices and useless to read. It should say the database holds no
+notices. Not yet fixed.
+
+---
+
 ## Where we are at (end of session 7)
 
 The offline half of this project is finished and measured: 163 tests, `ruff`
@@ -676,31 +711,36 @@ feature: a stored Section 3 that the reader could not understand used to score
 GO. That was reachable before today by `capture --live` and by any hand-written
 row; `fetch` would simply have made it common. It is now CHECK.
 
-The live half has still never run. Five sessions have now written code against
-spike notes from 20 September without a single call to `e-licitatie.ro`. That is
-the only thing standing between a working demo and a working tool.
+The live half has now been tried once, and it got a **403 on the first
+request**. Nothing downstream of that — field names, Section 3 shapes, the
+`noticeId` vs `cNoticeId` question — has been tested at all, and none of it can
+be until the portal answers. Everything in `sicap/client.py` is still only as
+good as the 20 September spike notes.
 
 ## Next actions in the next task
 
-1. **On Gabriel's machine, with the portal reachable** — the whole point now:
-   ```
-   bidscout watch --days 1
-   bidscout fetch
-   bidscout score
-   ```
-   Fix whatever has moved, and correct `docs/data-sources.md`. In particular
-   confirm whether `GetSection3View` wants `noticeId` or `cNoticeId`, and
-   whether `GetDfNoticeSectionFiles` still returns the five groups it did in
-   September. This is immediate step 1, and it now unblocks three other items.
-   Watch for notices that come back CHECK with "recognised none of the
-   qualification criteria": each one is either a field name that has moved or a
-   gate the extractor needs to learn.
-2. **Then, still live:** `bidscout capture <id> --live` on about thirty notices
+1. **Diagnose the 403.** Everything else waits on this. Establish which of the
+   three it is — our User-Agent, non-browser clients in general, or the public
+   API being gone — then record the answer in `docs/data-sources.md` whatever it
+   turns out to be. If a header is needed, it gets a test; if the portal is
+   deliberately refusing tools, that is a decision to take knowingly and write
+   down, not to work around quietly.
+2. **Fill in `profile.yaml`** from `profile.example.yaml`: average turnover over
+   three financial years, largest evidenced similar contract, cash available for
+   a participation guarantee, contract-size range. Every verdict is measured
+   against these four numbers.
+3. **Then the rest of immediate step 1:** `watch` → `fetch` → `score`, confirm
+   whether `GetSection3View` wants `noticeId` or `cNoticeId`, and whether
+   `GetDfNoticeSectionFiles` still returns the five groups. Watch for notices
+   that come back CHECK with "recognised none of the qualification criteria":
+   each is a moved field name or a gate the extractor needs to learn.
+4. **Fix the empty-database message in `fetch`** (see session 7b).
+5. **Then, still live:** `bidscout capture <id> --live` on about thirty notices
    and label them, so the "60% coverage" figure becomes a measurement instead of
    a guess (immediate step 2's follow-up).
-3. **Then, with one live look at a notice that has one:** store secondary CPV
+6. **Then, with one live look at a notice that has one:** store secondary CPV
    codes (immediate step 3's remaining bullet), and read the lot contents via
    `GetSection22LotList`.
-4. **Offline, if a cloud session comes first:** immediate step 5, direct
+7. **Offline, if a cloud session comes first:** immediate step 5, direct
    purchases — mapped in `docs/data-sources.md` section 2.5, no Section 3 to
    read, so the gates differ and it needs its own short rule set.
