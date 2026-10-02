@@ -7,7 +7,7 @@ check.** No finding lives only in a chat window. Every claim gets a command.
 
 ```bash
 make install
-make check      # 185 offline tests + ruff
+make check      # 186 offline tests + ruff
 make demo       # the whole pipeline on captured fixtures, no network
 ```
 
@@ -15,7 +15,7 @@ make demo       # the whole pipeline on captured fixtures, no network
 
 | Command | Claim it tests | Needs the portal |
 |---|---|---|
-| `make test` | 185 offline tests on captured fixtures. About 40 s; the warehouse tests run the real `dbt build`. | no |
+| `make test` | 186 offline tests on captured fixtures. About 40 s; the warehouse tests run the real `dbt build`. | no |
 | `make lint` | `ruff` clean at line length 100. | no |
 | `make demo` | Store → extract → decide → rank, end to end. | no |
 | `bidscout score` | Ranking from the database only. | no |
@@ -25,6 +25,7 @@ make demo       # the whole pipeline on captured fixtures, no network
 | `make site` | score → `dbt build` → `site/data.json` from the app marts, from the live database. | no |
 | `make demo-site` | The same, from the captured fixtures. | no |
 | `make serve` | The page as GitHub Pages serves it, at localhost:8000. | no |
+| `make explore` | Every table, landing to app marts, browsable in DuckDB's UI, read-only. | no |
 | `make docs` | The warehouse's models, columns, tests and lineage graph, in a browser. | no |
 | `bidscout stats` | What the database holds. | no |
 | `make eval` | Coverage and precision per gate, on hand-labelled notices. | no |

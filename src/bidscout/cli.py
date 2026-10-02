@@ -69,6 +69,20 @@ def build_parser() -> argparse.ArgumentParser:
         "--company", help="whose verdicts the app marts show (default: the profile's company)"
     )
 
+    explore = sub.add_parser(
+        "explore",
+        help="browse every table, landing to app marts, in DuckDB's web UI (read-only)",
+    )
+    explore.add_argument(
+        "--warehouse", help="the DuckDB file to open (default: beside --db, as .duckdb)"
+    )
+    explore.add_argument(
+        "--build", action="store_true", help="rebuild the warehouse first (bidscout transform)"
+    )
+    explore.add_argument(
+        "--no-browser", action="store_true", help="start the UI server without opening a tab"
+    )
+
     sub.add_parser("stats", help="what the database holds")
 
     watch = sub.add_parser("watch", help="poll SEAP and store what is new")
@@ -118,6 +132,8 @@ def main(argv: list[str] | None = None) -> int:
         return _cmd_export(args)
     if args.command == "transform":
         return _cmd_transform(args)
+    if args.command == "explore":
+        return _cmd_explore(args)
     if args.command == "watch":
         return _cmd_watch(args)
     if args.command == "fetch":
@@ -272,6 +288,51 @@ def _cmd_transform(args: argparse.Namespace) -> int:
     built = transform(args.db, args.warehouse, company=company or "Example SRL")
     print(f"Built {built.as_posix()} from {Path(args.db).as_posix()}.")
     print("Query it with duckdb; the page reads the app.* tables. See docs/data-model.md.")
+    return 0
+
+
+def _cmd_explore(args: argparse.Namespace) -> int:
+    """Serve DuckDB's web UI over the warehouse until Ctrl+C.
+
+    Everything opens read-only. On Windows a file held open is locked, so
+    ``transform`` and ``export`` cannot rebuild the warehouse while this runs;
+    the command says so rather than leave a confusing dbt error for later.
+    """
+    import time  # noqa: PLC0415 - only needed here
+
+    from bidscout.warehouse import (  # noqa: PLC0415 - dbt and duckdb are heavy
+        open_for_exploring,
+        warehouse_path_for,
+    )
+
+    warehouse = Path(args.warehouse) if args.warehouse else warehouse_path_for(args.db)
+    if args.build or not warehouse.exists():
+        rc = _cmd_transform(argparse.Namespace(**{**vars(args), "company": None}))
+        if rc:
+            return rc
+
+    connection = open_for_exploring(args.db, warehouse)
+    start = "start_ui_server" if args.no_browser else "start_ui"
+    message = connection.execute(f"CALL {start}()").fetchone()[0]
+    print(message, flush=True)
+    print(
+        f"Warehouse {warehouse.as_posix()}, landing {Path(args.db).as_posix()} as "
+        "bidscout_landing — both read-only.\n"
+        "Schemas: app (what the page reads), core (dims and facts), intermediate, "
+        "staging, and bidscout_landing.main (raw). Try:\n"
+        "  select read_status, count(*) from core.fct_notices group by all;\n"
+        "  select * from core.dim_buyers order by notices desc;\n"
+        "While this runs, `transform` and `export` cannot rebuild the warehouse. "
+        "Ctrl+C to stop.",
+        flush=True,
+    )
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        connection.close()
     return 0
 
 

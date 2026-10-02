@@ -129,12 +129,34 @@ files and `warehouse/macros/`.
 - **`scored_iff_decided`** — ground rule 2 at the boundary: a decision appears
   on `app_tenders` if and only if the notice was read and scored.
 
-## Querying it
+## Looking at the data
 
 ```bash
-bidscout transform                    # build data/bidscout.duckdb on its own
-.venv/Scripts/python -c "import duckdb; print(duckdb.connect('data/bidscout.duckdb', read_only=True).sql('select * from core.dim_buyers order by notices desc limit 10'))"
-make docs                             # dbt docs: every model, column and the lineage graph
+make explore          # or: bidscout explore
 ```
+
+Opens DuckDB's web UI at <http://localhost:4213> on `data/bidscout.duckdb`,
+with the landing file attached as `bidscout_landing`. Every layer is there to
+browse and query: `bidscout_landing.main` (raw), `staging`, `intermediate`,
+`core`, `app`. Both files are opened **read-only**, so nothing you run there
+can change what the page is built from. It builds the warehouse first if there
+is none; `--build` rebuilds it.
+
+While it runs, the warehouse file is locked (Windows), so `make site` /
+`bidscout export` cannot rebuild it. Stop it with Ctrl+C first. The first run
+downloads the UI from duckdb.org, so it needs the internet once.
+
+Some starting points:
+
+```sql
+select read_status, count(*) from core.fct_notices group by all;
+select * from core.dim_buyers order by notices desc;
+select cpv_division, sum(notices) from core.dim_cpv group by all order by 2 desc;
+select decision, count(*), avg(score) from app.app_tenders where decision is not null group by all;
+select notice_no, requirement_kind, amount_text, quote from core.fct_requirements;
+```
+
+`make docs` shows the other half: the model definitions, column descriptions,
+tests and the lineage graph (dbt docs).
 
 The demo works the same way: `data/demo.sqlite3` builds `data/demo.duckdb`.
