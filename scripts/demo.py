@@ -56,8 +56,8 @@ def main() -> int:
             )
         )
 
-        profile = load_profile(ROOT / "profile.example.yaml")
-        rules = load_rules(ROOT / "rules" / "it.yaml")
+        profile = load_profile(ROOT / "config" / "profile.example.yaml")
+        rules = load_rules(ROOT / "config" / "rules" / "it.yaml")
         run = score_stored(store, profile, rules)
 
         print(f"Company: {profile['company_name']}   Rules: {rules.name}\n")

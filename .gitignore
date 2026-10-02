@@ -6,3 +6,7 @@ profile.yaml
 *.egg-info/
 .pytest_cache/
 .ruff_cache/
+
+# dbt build output
+warehouse/target/
+warehouse/logs/

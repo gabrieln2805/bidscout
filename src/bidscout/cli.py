@@ -20,19 +20,13 @@ from bidscout.errors import SectionNotStored
 from bidscout.pipeline import notice_from_item, score_stored
 from bidscout.store.db import DEFAULT_DB_PATH, Store
 
-#: Commands that never open a socket. ``capture`` is offline too unless it is
-#: given ``--live``, so it is not in this set.
-OFFLINE_COMMANDS = frozenset(
-    {"score", "stats", "explain", "requirements", "eval", "export"}
-)
-
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="bidscout", description=__doc__.splitlines()[0])
     parser.add_argument("--version", action="version", version=f"bidscout {__version__}")
     parser.add_argument("--db", default=str(DEFAULT_DB_PATH), help="path to the SQLite file")
-    parser.add_argument("--profile", default="profile.yaml", help="your company profile")
-    parser.add_argument("--rules", default="rules/it.yaml", help="the rule set to apply")
+    parser.add_argument("--profile", default="config/profile.yaml", help="your company profile")
+    parser.add_argument("--rules", default="config/rules/it.yaml", help="the rule set to apply")
     sub = parser.add_subparsers(dest="command", required=True)
 
     score = sub.add_parser("score", help="rank stored tenders (no request to SEAP)")
@@ -56,9 +50,24 @@ def build_parser() -> argparse.ArgumentParser:
         help="write the scored database to a JSON file for the web page (no request to SEAP)",
     )
     export.add_argument(
-        "--out", default="docs/data.json", help="where to write the file the page reads"
+        "--out", default="site/data.json", help="where to write the file the page reads"
     )
     export.add_argument("--cpv", help="primary CPV prefix, e.g. 72000000")
+    export.add_argument(
+        "--warehouse", help="the DuckDB file dbt builds (default: beside --db, as .duckdb)"
+    )
+
+    transform = sub.add_parser(
+        "transform",
+        help="build the warehouse (dbt: staging, core and app marts) from the database "
+        "(no request to SEAP)",
+    )
+    transform.add_argument(
+        "--warehouse", help="the DuckDB file dbt builds (default: beside --db, as .duckdb)"
+    )
+    transform.add_argument(
+        "--company", help="whose verdicts the app marts show (default: the profile's company)"
+    )
 
     sub.add_parser("stats", help="what the database holds")
 
@@ -107,6 +116,8 @@ def main(argv: list[str] | None = None) -> int:
         return _cmd_requirements(args)
     if args.command == "export":
         return _cmd_export(args)
+    if args.command == "transform":
+        return _cmd_transform(args)
     if args.command == "watch":
         return _cmd_watch(args)
     if args.command == "fetch":
@@ -122,8 +133,8 @@ def _load(args: argparse.Namespace) -> tuple[dict[str, Any], RuleSet]:
     profile_path = Path(args.profile)
     if not profile_path.exists():
         print(
-            f"No profile at {profile_path}. Copy profile.example.yaml to profile.yaml "
-            "and put your own numbers in.",
+            f"No profile at {profile_path}. Copy config/profile.example.yaml to "
+            "config/profile.yaml and put your own numbers in.",
             file=sys.stderr,
         )
         raise SystemExit(2)
@@ -225,19 +236,42 @@ def _cmd_export(args: argparse.Namespace) -> int:
             profile,
             rules,
             cpv_prefix=args.cpv,
-            source={"database": args.db, "profile": args.profile, "rules": args.rules},
+            source={
+                "database": Path(args.db).as_posix(),
+                "profile": Path(args.profile).as_posix(),
+                "rules": Path(args.rules).as_posix(),
+            },
+            warehouse=args.warehouse,
         )
         path = write_export(args.out, payload)
 
     totals = payload["totals"]
     print(
-        f"Wrote {path}: {totals['scored']} scored "
+        f"Wrote {path.as_posix()}: {totals['scored']} scored "
         f"({totals['go']} GO, {totals['check']} CHECK, {totals['no_go']} NO-GO), "
         f"{totals['skipped_unread']} skipped."
     )
+    print(f"Read from the app marts in {payload['source']['warehouse']}.")
     print(
         f"It carries the company figures from {args.profile}. Committing it publishes them."
     )
+    return 0
+
+
+def _cmd_transform(args: argparse.Namespace) -> int:
+    """Build the warehouse on its own, for querying it. ``export`` runs this too.
+
+    It models what ``score`` last wrote; it does not score. Run ``score`` (or
+    ``export``) first if the extractor or the rules have changed since.
+    """
+    from bidscout.warehouse import transform  # noqa: PLC0415 - dbt is heavy
+
+    company = args.company
+    if company is None and Path(args.profile).exists():
+        company = str(load_profile(args.profile).get("company_name", "default"))
+    built = transform(args.db, args.warehouse, company=company or "Example SRL")
+    print(f"Built {built.as_posix()} from {Path(args.db).as_posix()}.")
+    print("Query it with duckdb; the page reads the app.* tables. See docs/data-model.md.")
     return 0
 
 
@@ -351,7 +385,8 @@ def _cmd_fetch(args: argparse.Namespace) -> int:
             )
             if simplified:
                 print(
-                    f"{simplified} simplified notices are still unread, and no detail "
+                    f"{simplified} simplified or concession notices are still unread, and no "
+                    "detail "
                     "endpoint is known for them (docs/data-sources.md, open item 1)."
                 )
             return 0

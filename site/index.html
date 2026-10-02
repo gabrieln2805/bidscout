@@ -3,9 +3,10 @@
   bidscout — the one page you send a link to.
 
   A static page. No build step, no dependencies, no framework. It reads
-  ./data.json, which `bidscout export` writes from the scored database, and
-  renders it. GitHub Pages serves files and runs no Python, so the export is the
-  only way data reaches this page.
+  ./data.json, which `bidscout export` writes from the app marts of the dbt
+  warehouse (warehouse/models/marts/app), and renders it. GitHub Pages serves
+  files and runs no Python, so the export is the only way data reaches this
+  page. Where every row comes from: docs/data-model.md.
 
   Two rules it must keep:
 
@@ -299,6 +300,12 @@
   .reqs-scroll { overflow-x: auto; }
 
   /* ---- skipped & footer ---------------------------------------------- */
+  .lineage { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px;
+    font-size: 13px; margin: 0 0 22px; }
+  .lineage .step { border: 1px solid var(--hairline); border-radius: 6px; padding: 4px 8px; }
+  .lineage .step code { font-size: 12px; }
+  .lineage .arrow { color: var(--ink-muted); }
+  .skipped h3 { font-size: 13px; margin: 14px 0 4px; }
   .skipped li { font-size: 13px; padding: 7px 0; border-top: 1px solid var(--hairline); }
   .skipped li:first-child { border-top: 0; }
   .skipped ul { list-style: none; margin: 0; padding: 0; }
@@ -365,6 +372,8 @@
 
 <footer>
   <div class="wrap">
+    <h2>Where this data comes from</h2>
+    <div class="lineage" id="lineage"></div>
     <h2>The rules this tool holds itself to</h2>
     <ol>
       <li><strong>Anything it checks, you must be able to check.</strong> Every claim on this
@@ -475,6 +484,7 @@
     };
     add("Scored", day(data.generated_at));
     if (data.source && data.source.database) add("from", data.source.database, true);
+    if (data.source && data.source.warehouse) add("via", data.source.warehouse, true);
     if (data.source && data.source.profile) add("against", data.source.profile, true);
     if (data.source && data.source.rules) add("rules", data.source.rules, true);
     add("bidscout", "v" + (data.bidscout_version || "?"));
@@ -686,6 +696,8 @@
       push(left >= 0 ? `${left} days left · ${day(tender.deadline_at)}`
                      : `closed ${day(tender.deadline_at)}`, "num");
     }
+    if (tender.contract_type) push(tender.contract_type);
+    if (tender.documents) push(`${tender.documents} files`, "num");
     if (tender.has_lots) push("split into lots", "badge");
     if (tender.is_simplified) push("simplified notice", "badge");
     head.append(meta);
@@ -704,28 +716,72 @@
     return card;
   };
 
+  // Why a notice has no verdict, in the words the page shows. The keys are the
+  // read_status values of app.app_tenders (warehouse/models/marts/app).
+  const WHY_UNREAD = {
+    "awaiting fetch":
+      "Section 3 has not been fetched yet. `bidscout fetch` reads it.",
+    "no known endpoint":
+      "Simplified and concession notices: the portal endpoint that holds their " +
+      "requirements has not been found yet, so nothing can read them.",
+    "portal refused":
+      "The portal answered \"not found\" for the Section 3. `bidscout fetch` asks again.",
+    "read, not scored":
+      "Section 3 is on file but has not been scored for this company yet.",
+  };
+
   const renderSkipped = (skipped) => {
     const box = document.getElementById("skipped");
     if (!skipped || !skipped.length) return;
     const card = el("div", "card skipped");
     card.style.marginTop = "22px";
-    card.append(el("h2", null, `Not read in full — ${skipped.length} skipped, not scored`));
+    card.append(el("h2", null, `Not read in full — ${skipped.length} listed, not scored`));
     const body = el("div", "card-body");
     body.append(el("p", "note",
-      "Section 3 has not been fetched for these, so bidscout has not read their " +
-      "requirements. They are counted and listed rather than scored: a notice with " +
-      "nothing on file would otherwise look like a notice that asks for nothing, " +
-      "and come out GO."));
-    const list = el("ul");
+      "bidscout has not read the requirements of these notices. They are listed rather " +
+      "than scored: a notice with nothing on file would otherwise look like a notice " +
+      "that asks for nothing, and come out GO."));
+    const groups = new Map();
     for (const notice of skipped) {
-      const item = el("li");
-      item.append(el("span", "num", notice.notice_no + "  "));
-      item.append(el("span", null, notice.title || ""));
-      list.append(item);
+      const key = notice.read_status || "awaiting fetch";
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(notice);
     }
-    body.append(list);
+    for (const [status, notices] of groups) {
+      body.append(el("h3", null, `${status} — ${notices.length}`));
+      if (WHY_UNREAD[status]) body.append(el("p", "note", WHY_UNREAD[status]));
+      const list = el("ul");
+      for (const notice of notices) {
+        const item = el("li");
+        item.append(el("span", "num", notice.notice_no + "  "));
+        item.append(el("span", null, notice.title || ""));
+        list.append(item);
+      }
+      body.append(list);
+    }
     card.append(body);
     box.append(card);
+  };
+
+  // portal -> landing -> warehouse -> app marts -> this page, from the file itself.
+  const renderLineage = (data) => {
+    const box = document.getElementById("lineage");
+    const pipeline = data.pipeline || {};
+    const source = data.source || {};
+    const steps = [
+      ["SICAP public API", pipeline.portal],
+      ["landing", source.database],
+      ["dbt warehouse", source.warehouse],
+      ["app marts", (pipeline.marts || []).join(", ")],
+      ["this page", "data.json"],
+    ];
+    steps.forEach(([label, detail], index) => {
+      if (index) box.append(el("span", "arrow", "→"));
+      const step = el("span", "step");
+      step.append(el("b", null, label + " "));
+      if (detail) step.append(el("code", null, detail));
+      box.append(step);
+    });
   };
 
   /* ---------------------------------------------------------------- boot */
@@ -768,11 +824,12 @@
         tenders.forEach((tender, index) => box.append(renderTender(tender, index === 0)));
       }
       renderSkipped(data.skipped);
+      renderLineage(data);
 
       document.getElementById("footnote").textContent =
         `Figures shown are those in ${(data.source && data.source.profile) || "the profile"}, ` +
         `scored from ${(data.source && data.source.database) || "the database"} on ` +
-        `${day(data.generated_at)}. Regenerate this page's data with \`bidscout export\`. ` +
+        `${day(data.generated_at)}. Regenerate this page's data with \`make site\`. ` +
         "bidscout is a decision aid; it is not legal advice and it submits nothing for you.";
     })
     .catch((error) => {
@@ -781,7 +838,7 @@
       fail("Could not load data.json",
            `${error.message}. If you opened this file directly, serve the folder ` +
            "over HTTP instead — a browser blocks fetch() on file:// URLs.",
-           "python -m http.server --directory docs 8000");
+           "python -m http.server --directory site 8000");
     });
 })();
 </script>

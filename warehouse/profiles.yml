@@ -1,0 +1,16 @@
+# Paths come from the environment so the same project builds the demo and the
+# live database. `bidscout transform` / `bidscout export` set both; run by hand
+# from the repository root it falls back to the live database.
+bidscout:
+  target: local
+  outputs:
+    local:
+      type: duckdb
+      path: "{{ env_var('BIDSCOUT_WAREHOUSE', 'data/bidscout.duckdb') }}"
+      threads: 1
+      extensions: [sqlite, json]
+      attach:
+        - path: "{{ env_var('BIDSCOUT_DB', 'data/bidscout.sqlite3') }}"
+          type: sqlite
+          alias: bidscout_landing
+          read_only: true

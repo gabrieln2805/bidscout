@@ -30,7 +30,7 @@ DA_CAP = 2000
 NOTICE_TYPE_FULL = 2
 NOTICE_TYPE_SIMPLIFIED = 17
 
-USER_AGENT = "bidscout/0.3 (public tender decision aid; contact: see repository README)"
+USER_AGENT = "bidscout/0.4 (public tender decision aid; contact: see repository README)"
 
 #: The portal refuses any request without a ``Referer`` and says so plainly:
 #: ``403 {"message": "Access Denied: Referrer cannot be null."}``. Every
