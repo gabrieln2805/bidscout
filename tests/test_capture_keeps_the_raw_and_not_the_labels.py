@@ -77,12 +77,12 @@ def test_a_live_capture_stores_the_raw_before_anything_reads_it(tmp_path, notice
 
     assert stored is not None
     assert stored.raw == payload
-    # The portal's Section 3 is keyed by the init notice id, not the cNoticeId.
-    assert source.asked_for == ["384463"]
+    # Section 3 is keyed by the cNoticeId, not the noticeId (384463).
+    assert source.asked_for == ["1096282"]
 
 
 def test_a_live_capture_of_an_unknown_notice_falls_back_to_the_id_given(tmp_path):
-    """Nothing stored means no init id to prefer; ask with what the user typed."""
+    """A notice that is not in the database is asked for by the id the user typed."""
     source = FakeSection3Source({"efCriteriaMin": "<p>x</p>"})
     with Store(tmp_path / "t.sqlite3") as store:
         capture_case(store, "555000", tmp_path / "cases", client=source)

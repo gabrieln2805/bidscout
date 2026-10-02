@@ -339,6 +339,9 @@ def _cmd_fetch(args: argparse.Namespace) -> int:
 
     limit = fetch_limit(args.limit)
     with Store(args.db) as store:
+        if store.counts()["notices"] == 0:
+            print(f"{args.db} holds no notices yet. Run `bidscout watch` first.")
+            return 0
         waiting = store.count_missing_section3(exclude_simplified=True)
         if waiting == 0:
             simplified = store.count_missing_section3(simplified_only=True)

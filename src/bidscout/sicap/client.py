@@ -181,29 +181,44 @@ class SicapClient:
         return payload
 
     def get_section3(
-        self, init_notice_id: int | str, notice_type: int = NOTICE_TYPE_FULL
+        self, c_notice_id: int | str, notice_type: int = NOTICE_TYPE_FULL
     ) -> dict[str, Any]:
         """Fetch Section 3 — the qualification criteria, as HTML in JSON.
 
         This is the section that carries the turnover and experience gates, so
         most decisions never need to open a PDF.
+
+        The query parameter is called ``initNoticeId`` but it takes the
+        **cNoticeId** from the search results. Confirmed live on 2 October
+        2026: CN1097018 answers its criteria for ``cNoticeId`` 100212664, and
+        for its ``noticeId`` 101402981 it answers ``hasError: true``, "Anuntul
+        cautat nu a fost gasit in sistem", wrapped in a section with every
+        field null. That answer is raised, never returned, because stored it
+        would look like a section whose buyer asks for nothing.
         """
         payload = self._get(
             "NoticeCommon/GetSection3View/",
-            {"initNoticeId": init_notice_id, "sysNoticeTypeId": notice_type},
+            {"initNoticeId": c_notice_id, "sysNoticeTypeId": notice_type},
         )
         if payload is None:
-            raise NoticeNotFound(f"no Section 3 for initNoticeId={init_notice_id}")
+            raise NoticeNotFound(f"no Section 3 for cNoticeId={c_notice_id}")
+        _refuse_error_payload(payload, f"Section 3 for cNoticeId={c_notice_id}")
         return payload
 
     def get_documents(
-        self, init_notice_id: int | str, notice_type: int = NOTICE_TYPE_FULL
+        self, c_notice_id: int | str, notice_type: int = NOTICE_TYPE_FULL
     ) -> dict[str, Any]:
-        """List the files attached to a notice, grouped by kind."""
-        return self._get(
+        """List the files attached to a notice, grouped by kind.
+
+        Keyed by the cNoticeId, like Section 3. Asked with the ``noticeId`` the
+        portal answers a list of two error strings instead of an object.
+        """
+        payload = self._get(
             "NoticeCommon/GetDfNoticeSectionFiles/",
-            {"initNoticeId": init_notice_id, "sysNoticeTypeId": notice_type},
+            {"initNoticeId": c_notice_id, "sysNoticeTypeId": notice_type},
         )
+        _refuse_error_payload(payload, f"the file list for cNoticeId={c_notice_id}")
+        return payload
 
     def download_document(self, guid_or_url: str) -> bytes:
         """Download one attached file by its GUID.
@@ -230,6 +245,29 @@ class SicapClient:
         if isinstance(payload, dict):
             return str(payload.get("serverTime") or payload.get("value") or payload)
         return str(payload)
+
+
+def is_error_payload(payload: Any) -> bool:
+    """True when the portal answered with an error dressed as data.
+
+    The portal reports "not found" with HTTP 200 and ``hasError: true`` beside
+    a full set of null fields, or, on the file list, with a bare list of error
+    strings. Both look like data to a caller that only checks the status code.
+    """
+    if isinstance(payload, dict):
+        return bool(payload.get("hasError"))
+    return not isinstance(payload, dict)
+
+
+def _refuse_error_payload(payload: Any, what: str) -> None:
+    """Raise ``NoticeNotFound`` for an error answer, quoting the portal's words."""
+    if not is_error_payload(payload):
+        return
+    if isinstance(payload, dict):
+        message = payload.get("responseMessage") or "hasError: true"
+    else:
+        message = "; ".join(str(part) for part in payload) if isinstance(payload, list) else payload
+    raise NoticeNotFound(f"the portal refused {what}: {message}")
 
 
 def _refuse_capped_result(payload: dict[str, Any], cap: int) -> None:

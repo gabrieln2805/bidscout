@@ -27,7 +27,7 @@ class Section3Source(Protocol):
     a test hand in a fake without building a client at all.
     """
 
-    def get_section3(self, init_notice_id: int | str) -> dict[str, Any]: ...
+    def get_section3(self, c_notice_id: int | str) -> dict[str, Any]: ...
 
 
 def capture_case(
@@ -45,13 +45,9 @@ def capture_case(
     notice = _stored_notice(store, c_notice_id)
 
     if client is not None:
-        # The portal's Section 3 is keyed by the *init* notice id, which is a
-        # different number from the cNoticeId in the search results. Which of
-        # the two the endpoint really wants is still unconfirmed against the
-        # live portal (see STATUS.md, immediate step 1), so prefer the stored
-        # init id when there is one and fall back to the id we were handed.
-        init_id = (notice.init_notice_id if notice else None) or c_notice_id
-        raw = client.get_section3(init_id)
+        # Section 3 is keyed by the cNoticeId, confirmed live on 2 October
+        # 2026 (see ``SicapClient.get_section3``).
+        raw = client.get_section3(c_notice_id)
         store.save_section3(c_notice_id, raw)
 
     section3 = store.section3(c_notice_id)
