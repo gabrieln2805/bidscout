@@ -4,11 +4,13 @@ Spike date: 20 September 2026. Method: the public JSON API behind
 `www.e-licitatie.ro`, called from the browser, same origin.
 
 > **Read this first.** The findings below were measured on 20 September 2026
-> against the live portal. The code in this repository was rebuilt from this
-> document on 27 September 2026 **without** live access, so the code matches
-> the document but has **not** been re-checked against the portal. Run
-> `bidscout watch --days 1` on a machine that can reach e-licitatie.ro to
-> confirm, and correct this file if anything has moved.
+> against the live portal. Sections 2.1 (search), 2.3 (Section 3) and 2.4
+> (file list) were **re-confirmed live on 2 October 2026** — `watch`, `fetch`
+> and `score` ran end to end on 129 real notices — and the corrections are
+> marked with that date. Everything else is still the September spike.
+>
+> This file says where the data comes from. What happens to it after it lands
+> — the warehouse tables the app reads — is in `docs/data-model.md`.
 
 ---
 
@@ -128,11 +130,28 @@ POST /api-pub/NoticeCommon/GetSection22LotList/
 GET /api-pub/PUBLICCNotice/CheckDfDocumentsAndClarifications/?cNoticeId={id}
 ```
 
+**`initNoticeId` takes the `cNoticeId`.** *Confirmed live on 2 October 2026*
+for `GetSection3View` and `GetDfNoticeSectionFiles`: CN1097018 answers for
+`initNoticeId=100212664` (its `cNoticeId`). Asked with its `noticeId`
+(101402981), Section 3 comes back **HTTP 200** with every field null,
+`"hasError": true` and `"responseMessage": "Anuntul cautat nu a fost gasit in
+sistem"`; the file list comes back as a list of two error strings. A 200 is
+therefore not success: `SicapClient` raises on `hasError`. Held by
+`tests/test_the_portal_not_found_is_not_a_section.py`. The other section
+endpoints above are unchecked and probably follow the same rule.
+
+**Concession notices** (`sysNoticeTypeId` 7, prefix `PC`) answer "not found"
+on Section 3 with `sysNoticeTypeId=2`. Their type id is untested there.
+
 **Section 3 is the one that matters.** Size about 15 KB. Fields:
 `personalSituation`, `efCriteria`, `efCriteriaMin`, `efCriteriaBold1/2`,
 `tpCriteriaQAStandard`, `tpCriteriaQAStandardMin`, `depositsAndWarranties`,
 `legalFormOfSuppliers`, `mandatoryProfesionalQualif`, `prCriteria`.
-The values hold HTML. Strip the tags before you parse.
+The text values hold HTML. Strip the tags before you parse.
+`mandatoryProfesionalQualif` is a **boolean** on the live portal, not prose
+(*2 October 2026*), as are `isReservedContract`, `hasSpecialConditions`, the
+`restrictedTo…` fields and the `canView3_*` flags. A live payload also carries
+`hasError: false` and `responseMessage: null`.
 
 *Open:* `getPubCNoticeView` returns `null` for a simplified notice
 (`sysNoticeTypeId` 17, prefix `SCN`). Find the matching endpoint for that
