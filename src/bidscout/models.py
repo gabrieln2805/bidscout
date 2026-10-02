@@ -61,10 +61,16 @@ class Section3:
     raw: dict[str, Any] = field(repr=False, default_factory=dict)
 
     def text(self, key: str) -> str:
-        """Return one Section 3 field as plain text, or an empty string."""
+        """Return one Section 3 field as plain text, or an empty string.
+
+        Only a string holds the buyer's prose. The live portal sends some fields
+        as flags — ``mandatoryProfesionalQualif`` is ``true`` or ``false``, not a
+        sentence — and a flag has no words to quote.
+        """
         from bidscout.extract.html import strip_html  # noqa: PLC0415 - avoids a cycle
 
-        return strip_html(self.raw.get(key) or "")
+        value = self.raw.get(key)
+        return strip_html(value) if isinstance(value, str) else ""
 
 
 @dataclass
