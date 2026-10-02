@@ -5,37 +5,54 @@
 It reads each new tender, compares it with your company profile, and answers
 one question: *should you bid?*
 
-**The page:** <https://gabrieln2805.github.io/bidscout/> — built by
-`make site` from the captured fixtures, so every number on it is reproduced by
-a command in this repository.
+**The page:** <https://gabrieln2805.github.io/bidscout/> — real tenders from the
+public SICAP API, scored against an example company. Every number on it comes
+out of the warehouse tables described below, by one command.
 
 ---
 
-## Try it in one minute
+## Where the data comes from
+
+```
+SICAP public JSON API          e-licitatie.ro/api-pub — public, no sign-in
+   │  bidscout watch / fetch
+   ▼
+landing    data/bidscout.sqlite3   the portal's JSON exactly as it arrived
+   │  bidscout score               + the rules engine's verdicts
+   ▼
+warehouse  data/bidscout.duckdb    dbt: staging → core marts → app marts
+   │  bidscout export
+   ▼
+site/data.json  →  site/index.html  the page reads the app_* marts only
+```
+
+- **What the portal is and how we call it:** `docs/data-sources.md`
+- **Every table, its grain, and which ones the app reads:** `docs/data-model.md`
+
+## Try it
 
 ```bash
 make install
-make demo
+make demo-site     # the whole road on captured fixtures, no network
+make serve         # http://localhost:8000
 ```
 
-`make demo` builds a small database from captured fixtures and scores it. It
-needs no network and no profile. You should see one NO-GO with both numbers
-printed, one CHECK, and one notice skipped because it was never read in full.
-
-And to see the page:
+With the portal reachable, use real data:
 
 ```bash
-make site      # rebuild the demo database and the JSON the page reads
-make serve     # http://localhost:8000
+make ingest        # land yesterday's notices and read their Section 3
+make site          # score → dbt build → site/data.json
 ```
 
 Then make it yours:
 
 ```bash
-cp profile.example.yaml profile.yaml    # put your own numbers in
-.venv/bin/bidscout --db data/demo.sqlite3 score
-.venv/bin/bidscout --db data/demo.sqlite3 explain 1096282
+cp config/profile.example.yaml config/profile.yaml   # your own numbers
+bidscout score
+bidscout explain <c_notice_id>
 ```
+
+No `make`? Every target is one `bidscout` command — see the `Makefile`.
 
 ## The problem
 
@@ -50,13 +67,11 @@ you whether you qualify.
 
 ## What bidscout does today
 
-1. **Watches** SEAP for tenders in your CPV codes and stores what is new.
-2. **Reads** the qualification section out of the portal's own JSON, for every
-   stored notice that has none yet (`bidscout fetch`). About 60% of tenders can
-   be decided without opening a PDF. A section the reader recognises nothing in
-   is kept and reported as **CHECK** — never GO, which is what an unreadable
-   section would otherwise score once every gate reads "the buyer does not ask
-   for one".
+1. **Watches** SEAP and lands every new notice, raw.
+2. **Reads** the qualification section (Section 3) and the file list out of the
+   portal's own JSON. On the first live run, 44 of 44 contract notices were
+   read. Simplified and concession notices — 85 of 129 that day — have no known
+   endpoint yet and are listed as unread, never scored.
 3. **Extracts** the gates as facts that each keep the buyer's own sentence.
 4. **Decides** GO, CHECK or NO-GO with a score out of 100 and a short reason:
 
@@ -64,85 +79,72 @@ you whether you qualify.
    > you have 1.200.000 RON.
    > Source: `efCriteriaMin`.
 
-5. **Measures itself.** `bidscout eval` reads a set of notices a person has
-   labelled by hand and prints, per gate, how often the extractor finds a
-   figure at all and how often the figure is right. The "60%" above is a
-   guess from a one-day spike until that table says otherwise.
+5. **Models** it all into a dbt warehouse: buyers, CPV codes, notices,
+   documents, requirements, verdicts — tested on every build.
+6. **Shows its work.** One static page, written from the app marts: your company
+   on the left, the tenders ranked on the right, click one for the buyer's own
+   sentences, and the notices not read listed with the reason.
+7. **Measures itself.** `bidscout eval` scores the extractor against notices
+   labelled by hand. Three so far — a smoke test, not yet a measurement.
 
-6. **Shows its work.** One static page — your company on the left, the
-   tenders ranked on the right, click one for the buyer's own sentences. It is
-   written by `bidscout export` from the scored database, so it can never
-   claim anything the database does not hold. See `docs/README.md`.
-
-Not built yet: direct acquisitions, the document checklist, alerts, and PDF
-reading for the other 40%. See `STATUS.md`.
+Not built yet: direct acquisitions, simplified notices, the document checklist,
+alerts, and PDF reading. See `STATUS.md`.
 
 ## How it decides
 
-A plain rules engine makes the decision. The rules live in `rules/it.yaml`,
-not in code, so every verdict can be explained, tested, and corrected by a
-person who does not write Python.
+A plain rules engine makes the decision. The rules live in
+`config/rules/it.yaml`, not in code, so every verdict can be explained, tested,
+and corrected by a person who does not write Python.
 
 ```
 hard gates  -> a failure = NO-GO, but only when both numbers are known
 weights     -> a score from 0 to 100 for everything else
 ```
 
-A missing fact or an unreadable requirement produces **CHECK**, never NO-GO.
-That rule is held in place by `tests/test_unknown_never_becomes_no_go.py`. A
-tender split into lots is held at CHECK for the same reason: the notice-level
-figure may be the total for every lot, and bidscout has not read the lots yet
-(`tests/test_a_multi_lot_tender_is_never_a_no_go.py`).
-
-Every figure the extractor reads is written to a `requirements` table with the
-buyer's sentence and the field it came from, so a verdict can be traced back
-without re-running the parser: `bidscout requirements <id>`. That table is
-derived — the stored raw Section 3 stays the only source of truth, and the
-scorer re-reads it on every run.
+A missing fact or an unreadable requirement produces **CHECK**, never NO-GO
+(`tests/test_unknown_never_becomes_no_go.py`). A tender split into lots is held
+at CHECK for the same reason. The warehouse holds the same line at its edge: a
+decision appears only on a notice that was read and scored (the dbt test
+`scored_iff_decided`).
 
 ## Commands
 
 | Command | What it does | Needs the portal |
 |---|---|---|
-| `bidscout score` | Rank stored tenders | no |
+| `bidscout watch --days 1` | Land new notices | **yes** |
+| `bidscout fetch` | Read Section 3 and the file list for landed notices | **yes** |
+| `bidscout score` | Rank landed tenders | no |
+| `bidscout transform` | Build the dbt warehouse from landing | no |
+| `bidscout export` | score → transform → `site/data.json` from the app marts | no |
 | `bidscout explain <id>` | Every reason behind one verdict, with quotes | no |
 | `bidscout requirements <id>` | The sentences the last score read, with their field | no |
-| `bidscout export` | Write `docs/data.json`, the file the web page reads | no |
-| `bidscout stats` | What the database holds | no |
+| `bidscout stats` | What landing holds | no |
 | `bidscout eval` | Measure the extractor against the labelled cases | no |
-| `bidscout capture <id>` | Turn a stored Section 3 into a new case to label | no |
-| `bidscout watch --days 1` | Poll the portal and store what is new | **yes** |
-| `bidscout fetch` | Read Section 3 and the file list for stored notices that have neither | **yes** |
-| `bidscout capture <id> --live` | Fetch a Section 3 and capture it | **yes** |
-| `make site` | Rebuild the demo database and the page's data | no |
-| `make serve` | Serve `docs/` the way GitHub Pages does | no |
-| `make test` | 163 offline tests | no |
-| `make lint` | `ruff`, line length 100 | no |
+| `bidscout capture <id> [--live]` | Turn a Section 3 into a new case to label | `--live` only |
+| `make check` | 185 offline tests + `ruff` | no |
+| `make docs` | Browse the warehouse models and lineage (dbt docs) | no |
 
 ## Layout
 
 ```
-src/bidscout/
-  sicap/      the only place that knows a SEAP URL
-  extract/    portal text -> facts that keep their quote
-  decide/     the rules engine; the rules are YAML
-  store/      SQLite; the raw JSON is never dropped
-  fetch.py    reads the Section 3 and file list that watch cannot
-  pipeline.py the glue, and the offline scorer
-  export.py   the scored database -> the JSON the web page reads
-  cli.py      the commands
-  accuracy/   the harness: labelled cases in, a coverage table out
-rules/it.yaml the IT rule set
-eval/cases/   notices labelled by hand; the input `bidscout eval` measures
-docs/         the published page (index.html + data.json), and the
-              verified findings about the portal
+src/bidscout/        Python: ingest, extract, decide, export
+  sicap/               the only place that knows a SEAP URL
+  fetch.py             reads the Section 3 and file list that watch cannot
+  extract/             portal text -> facts that keep their quote
+  decide/              the rules engine
+  store/               landing (SQLite); the raw JSON is never dropped
+  pipeline.py          portal item -> notice; the offline scorer
+  warehouse.py         runs dbt, reads the app marts
+  export.py            app marts -> site/data.json
+  accuracy/            the eval harness
+warehouse/           the dbt project: staging, intermediate, core, app
+site/                the published page: index.html + data.json
+config/              rules/it.yaml and profile.example.yaml
+docs/                data-sources, data-model, publishing, how-to-verify, history
+eval/cases/          notices labelled by hand
+tests/               offline tests and captured fixtures
+data/                landing and warehouse files (not committed)
 ```
-
-## Data
-
-Public data only: the SICAP public JSON API behind `e-licitatie.ro`. No
-sign-in, no scraping behind a login, no paywall. Every endpoint, field and
-limit is written down in `docs/data-sources.md`.
 
 ## Limits
 
