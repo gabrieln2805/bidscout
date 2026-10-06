@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generated_at": "2026-10-02T06:53:04+00:00",
+  "generated_at": "2026-10-06T08:11:18+00:00",
   "bidscout_version": "0.4.0",
   "source": {
     "database": "data/bidscout.sqlite3",
@@ -17,8 +17,8 @@
       "app.app_pipeline_status"
     ],
     "read_status": {
-      "scored": 44,
-      "no known endpoint": 85
+      "no known endpoint": 85,
+      "scored": 44
     }
   },
   "company": {
@@ -74,8 +74,8 @@
   "totals": {
     "scored": 44,
     "skipped_unread": 85,
-    "go": 1,
-    "check": 32,
+    "go": 0,
+    "check": 33,
     "no_go": 11
   },
   "tenders": [
@@ -116,10 +116,17 @@
           "quote": null,
           "source_field": null,
           "outcome": "absent"
+        },
+        {
+          "text": "Sector: CPV 80530000 is outside your watchlist (72000000, 72260000, 48000000, 30200000). The figures may fit, but this is not your line of work as your profile describes it. Decide whether you want it before reading further.",
+          "quote": null,
+          "source_field": "cpvCodeAndName",
+          "outcome": "fail"
         }
       ],
       "unresolved": [
-        "similar experience"
+        "similar experience",
+        "the sector (CPV 80530000 is not in your watchlist)"
       ],
       "requirements": [
         {
@@ -165,7 +172,7 @@
       "has_lots": false,
       "is_simplified": false,
       "documents": 6,
-      "decision": "GO",
+      "decision": "CHECK",
       "score": 75,
       "reasons": [
         {
@@ -185,9 +192,17 @@
           "quote": null,
           "source_field": null,
           "outcome": "absent"
+        },
+        {
+          "text": "Sector: CPV 79713000 is outside your watchlist (72000000, 72260000, 48000000, 30200000). The figures may fit, but this is not your line of work as your profile describes it. Decide whether you want it before reading further.",
+          "quote": null,
+          "source_field": "cpvCodeAndName",
+          "outcome": "fail"
         }
       ],
-      "unresolved": [],
+      "unresolved": [
+        "the sector (CPV 79713000 is not in your watchlist)"
+      ],
       "requirements": [
         {
           "kind": "experience",
@@ -250,11 +265,18 @@
           "quote": null,
           "source_field": null,
           "outcome": "unknown"
+        },
+        {
+          "text": "Sector: CPV 33141200 is outside your watchlist (72000000, 72260000, 48000000, 30200000). The figures may fit, but this is not your line of work as your profile describes it. Decide whether you want it before reading further.",
+          "quote": null,
+          "source_field": "cpvCodeAndName",
+          "outcome": "fail"
         }
       ],
       "unresolved": [
         "similar experience",
-        "the lots (not read yet)"
+        "the lots (not read yet)",
+        "the sector (CPV 33141200 is not in your watchlist)"
       ],
       "requirements": [
         {
@@ -279,6 +301,67 @@
           "currency": "RON",
           "quote": "Media cifrei de afaceri anuale a ofertantului pe ultimii 3 ani trebuie să fie cel puţin egală cu: Lot 1 - 1800lei, lot 2 - 3000 lei , Se vor prezenta documente justificative. De asemenea se va completa Formularul 6 din sectiunea ”FORMULARE ”",
           "source_field": "efCriteriaMin",
+          "confidence": "high"
+        }
+      ]
+    },
+    {
+      "c_notice_id": "100212664",
+      "notice_no": "CN1097018",
+      "title": "Subscripție VMware Cloud Foundation aferentă infrastructurii Dell VxRail",
+      "buyer": "Autoritatea de Supraveghere Financiara",
+      "buyer_key": "31588130",
+      "cpv": "48218000",
+      "cpv_name": "Pachete software pentru gestionarea licentelor (Rev.2)",
+      "notice_kind": "contract notice",
+      "procedure_type": "Licitatie deschisa",
+      "contract_type": "Furnizare",
+      "estimated_value_ron": "364800.00",
+      "published_at": "2026-10-02T08:51:12+03:00",
+      "deadline_at": "2026-11-05T15:00:00+02:00",
+      "has_lots": false,
+      "is_simplified": false,
+      "documents": 5,
+      "decision": "CHECK",
+      "score": 70,
+      "reasons": [
+        {
+          "text": "annual turnover: the buyer does not ask for one.",
+          "quote": null,
+          "source_field": null,
+          "outcome": "absent"
+        },
+        {
+          "text": "similar experience: the buyer states a requirement but no figure could be read. Read the quote and decide by hand.",
+          "quote": "A. În cazul în care ofertantul intenționează să subcontracteze o parte/părți din contract, DUAE include și informații privind partea din contract care urmează a fi eventual subcontractată și va avea anexat acordul de subcontractare și datele de identificare ale subcontractanților propuși dacă aceștia din urmă sunt cunoscuți la data depunerii ofertei. B. Subcontractanții pe a căror capacități se bazează ofertantul trebuie să completeze la rândul lor DUAE separat, incluzând informațiile menționate la art. 193 alin. (1) lit. a) din Legea nr. 98/2016 privind achizițiile publice, cu modificările…",
+          "source_field": "tpCriteriaQAStandardMin",
+          "outcome": "unknown"
+        },
+        {
+          "text": "participation guarantee: the buyer does not ask for one.",
+          "quote": null,
+          "source_field": null,
+          "outcome": "absent"
+        }
+      ],
+      "unresolved": [
+        "similar experience"
+      ],
+      "requirements": [
+        {
+          "kind": "experience",
+          "amount": null,
+          "currency": null,
+          "quote": "A. În cazul în care ofertantul intenționează să subcontracteze o parte/părți din contract, DUAE include și informații privind partea din contract care urmează a fi eventual subcontractată și va avea anexat acordul de subcontractare și datele de identificare ale subcontractanților propuși dacă aceștia din urmă sunt cunoscuți la data depunerii ofertei. B. Subcontractanții pe a căror capacități se bazează ofertantul trebuie să completeze la rândul lor DUAE separat, incluzând informațiile menționate la art. 193 alin. (1) lit. a) din Legea nr. 98/2016 privind achizițiile publice, cu modificările…",
+          "source_field": "tpCriteriaQAStandardMin",
+          "confidence": "low"
+        },
+        {
+          "kind": "personal_situation",
+          "amount": null,
+          "currency": null,
+          "quote": "Motive excludere privind situația operatorului economic: Încălcarea obligațiilor în domeniile legislației de mediu In masura cunostintelor sale, operatorul economic si-a Incalcat obligatiile In domeniul legislatiei mediului? Astfel cum sunt mentionate In scopul acestei achizitii publice In legislatia nationala, In anuntul relevant sau In documentele achizitiei ori la articolul 18 alineatul (2) din Directiva 2014/24/UE Operatorul economic (lider, asociat, subcontractant, după caz) are obligația completării și prezentării inițiale a DUAE ca primă dovadă a neîncadrării în situațiile de…",
+          "source_field": "personalSituation",
           "confidence": "high"
         }
       ]
@@ -320,9 +403,17 @@
           "quote": null,
           "source_field": null,
           "outcome": "absent"
+        },
+        {
+          "text": "Sector: CPV 33652300 is outside your watchlist (72000000, 72260000, 48000000, 30200000). The figures may fit, but this is not your line of work as your profile describes it. Decide whether you want it before reading further.",
+          "quote": null,
+          "source_field": "cpvCodeAndName",
+          "outcome": "fail"
         }
       ],
-      "unresolved": [],
+      "unresolved": [
+        "the sector (CPV 33652300 is not in your watchlist)"
+      ],
       "requirements": [
         {
           "kind": "experience",
@@ -387,9 +478,17 @@
           "quote": null,
           "source_field": null,
           "outcome": "absent"
+        },
+        {
+          "text": "Sector: CPV 71322000 is outside your watchlist (72000000, 72260000, 48000000, 30200000). The figures may fit, but this is not your line of work as your profile describes it. Decide whether you want it before reading further.",
+          "quote": null,
+          "source_field": "cpvCodeAndName",
+          "outcome": "fail"
         }
       ],
-      "unresolved": [],
+      "unresolved": [
+        "the sector (CPV 71322000 is not in your watchlist)"
+      ],
       "requirements": [
         {
           "kind": "experience",
@@ -452,10 +551,17 @@
           "quote": null,
           "source_field": null,
           "outcome": "unknown"
+        },
+        {
+          "text": "Sector: CPV 34144700 is outside your watchlist (72000000, 72260000, 48000000, 30200000). The figures may fit, but this is not your line of work as your profile describes it. Decide whether you want it before reading further.",
+          "quote": null,
+          "source_field": "cpvCodeAndName",
+          "outcome": "fail"
         }
       ],
       "unresolved": [
-        "the lots (not read yet)"
+        "the lots (not read yet)",
+        "the sector (CPV 34144700 is not in your watchlist)"
       ],
       "requirements": [
         {
@@ -479,67 +585,6 @@
           "amount": null,
           "currency": null,
           "quote": "Motive excludere privind situația operatorului economic: Pentru loturile: 1,2 Încălcarea obligațiilor în domeniile legislației de mediu Entitatea contractantă exclude din procedura de atribuire a contractului orice operator economic care a încălcat obligaţiile stabilite potrivit art. 64 alin. (1), iar entitatea contractantă poate demonstra acest lucru prin orice mijloc de probă adecvat, cum ar fi decizii ale entităţilor competente prin care se constată încălcarea acestor obligaţii; Modalitatea de indeplinire: Operatorul economic, subcontractanții si tertii susținatori ai acestuia vor depune…",
-          "source_field": "personalSituation",
-          "confidence": "high"
-        }
-      ]
-    },
-    {
-      "c_notice_id": "100212664",
-      "notice_no": "CN1097018",
-      "title": "Subscripție VMware Cloud Foundation aferentă infrastructurii Dell VxRail",
-      "buyer": "Autoritatea de Supraveghere Financiara",
-      "buyer_key": "31588130",
-      "cpv": "48218000",
-      "cpv_name": "Pachete software pentru gestionarea licentelor (Rev.2)",
-      "notice_kind": "contract notice",
-      "procedure_type": "Licitatie deschisa",
-      "contract_type": "Furnizare",
-      "estimated_value_ron": "364800.00",
-      "published_at": "2026-10-02T08:51:12+03:00",
-      "deadline_at": "2026-11-05T15:00:00+02:00",
-      "has_lots": false,
-      "is_simplified": false,
-      "documents": 5,
-      "decision": "CHECK",
-      "score": 45,
-      "reasons": [
-        {
-          "text": "annual turnover: the buyer does not ask for one.",
-          "quote": null,
-          "source_field": null,
-          "outcome": "absent"
-        },
-        {
-          "text": "similar experience: the buyer states a requirement but no figure could be read. Read the quote and decide by hand.",
-          "quote": "A. În cazul în care ofertantul intenționează să subcontracteze o parte/părți din contract, DUAE include și informații privind partea din contract care urmează a fi eventual subcontractată și va avea anexat acordul de subcontractare și datele de identificare ale subcontractanților propuși dacă aceștia din urmă sunt cunoscuți la data depunerii ofertei. B. Subcontractanții pe a căror capacități se bazează ofertantul trebuie să completeze la rândul lor DUAE separat, incluzând informațiile menționate la art. 193 alin. (1) lit. a) din Legea nr. 98/2016 privind achizițiile publice, cu modificările…",
-          "source_field": "tpCriteriaQAStandardMin",
-          "outcome": "unknown"
-        },
-        {
-          "text": "participation guarantee: the buyer does not ask for one.",
-          "quote": null,
-          "source_field": null,
-          "outcome": "absent"
-        }
-      ],
-      "unresolved": [
-        "similar experience"
-      ],
-      "requirements": [
-        {
-          "kind": "experience",
-          "amount": null,
-          "currency": null,
-          "quote": "A. În cazul în care ofertantul intenționează să subcontracteze o parte/părți din contract, DUAE include și informații privind partea din contract care urmează a fi eventual subcontractată și va avea anexat acordul de subcontractare și datele de identificare ale subcontractanților propuși dacă aceștia din urmă sunt cunoscuți la data depunerii ofertei. B. Subcontractanții pe a căror capacități se bazează ofertantul trebuie să completeze la rândul lor DUAE separat, incluzând informațiile menționate la art. 193 alin. (1) lit. a) din Legea nr. 98/2016 privind achizițiile publice, cu modificările…",
-          "source_field": "tpCriteriaQAStandardMin",
-          "confidence": "low"
-        },
-        {
-          "kind": "personal_situation",
-          "amount": null,
-          "currency": null,
-          "quote": "Motive excludere privind situația operatorului economic: Încălcarea obligațiilor în domeniile legislației de mediu In masura cunostintelor sale, operatorul economic si-a Incalcat obligatiile In domeniul legislatiei mediului? Astfel cum sunt mentionate In scopul acestei achizitii publice In legislatia nationala, In anuntul relevant sau In documentele achizitiei ori la articolul 18 alineatul (2) din Directiva 2014/24/UE Operatorul economic (lider, asociat, subcontractant, după caz) are obligația completării și prezentării inițiale a DUAE ca primă dovadă a neîncadrării în situațiile de…",
           "source_field": "personalSituation",
           "confidence": "high"
         }
@@ -582,9 +627,17 @@
           "quote": "Garantia de participare se constituie conform art.164, alin (4) din Legea 99/2016 Valoarea garantiei de participare: 18.998,00 lei Garanţia pentru participare poate fi constituită sub una din următoarele forme: In cazul viramentului bancar în favoarea entitatii contractante, CUI 15548207; cont nr. RO 65CECEB00030RON3369666 deschis la CEC Bank, confirmat de banca emitentă până la data limita de depunere a ofertelor ; sau printr-un instrument de garantare emis în condiţiile legii. Garanţia trebuie să fie irevocabilă, neconditionata . Perioada de valabilitate a garantiei de participare este cel…",
           "source_field": "depositsAndWarranties",
           "outcome": "pass"
+        },
+        {
+          "text": "Sector: CPV 14212300 is outside your watchlist (72000000, 72260000, 48000000, 30200000). The figures may fit, but this is not your line of work as your profile describes it. Decide whether you want it before reading further.",
+          "quote": null,
+          "source_field": "cpvCodeAndName",
+          "outcome": "fail"
         }
       ],
-      "unresolved": [],
+      "unresolved": [
+        "the sector (CPV 14212300 is not in your watchlist)"
+      ],
       "requirements": [
         {
           "kind": "deposit",
@@ -649,10 +702,17 @@
           "quote": null,
           "source_field": null,
           "outcome": "absent"
+        },
+        {
+          "text": "Sector: CPV 16700000 is outside your watchlist (72000000, 72260000, 48000000, 30200000). The figures may fit, but this is not your line of work as your profile describes it. Decide whether you want it before reading further.",
+          "quote": null,
+          "source_field": "cpvCodeAndName",
+          "outcome": "fail"
         }
       ],
       "unresolved": [
-        "similar experience"
+        "similar experience",
+        "the sector (CPV 16700000 is not in your watchlist)"
       ],
       "requirements": [
         {
@@ -710,11 +770,18 @@
           "quote": "Garanția de participare (GP) este de:3326 euro. Garantia de participare, irevocabila, va fi constituita conform prevederilor art.164, alin.(4) din Legea 99/2016 modificat prin Legea 208/2022 si OUG 136/2022. In cazul in care garantia de participare va fi constituita in alta valuta, se va folosi cursul comunicat de BNR din data publicarii anuntului de participare. Conturile entitatii contractante sunt: Cont în lei: RO 40 BRDE 445 SV 12412444450, Cont în euro: RO24BRDE 445 SV 11918064450. Perioada de valabilitate a garantiei de participare este de 120 zile de la data limita stabilita pt…",
           "source_field": "depositsAndWarranties",
           "outcome": "unknown"
+        },
+        {
+          "text": "Sector: CPV 50100000 is outside your watchlist (72000000, 72260000, 48000000, 30200000). The figures may fit, but this is not your line of work as your profile describes it. Decide whether you want it before reading further.",
+          "quote": null,
+          "source_field": "cpvCodeAndName",
+          "outcome": "fail"
         }
       ],
       "unresolved": [
         "similar experience",
-        "participation guarantee"
+        "participation guarantee",
+        "the sector (CPV 50100000 is not in your watchlist)"
       ],
       "requirements": [
         {
@@ -780,11 +847,18 @@
           "quote": "Garantie de participare: Garanția de participare (GP) este de 1.500 euro Garantia de participare, este irevocabila, va fi constituita conform prevederilor art.164, alin.(4) din Legea 99/2016 modificat prin Legea 208/2022 si OUG 136/2022. In cazul in care garantia de participare va fi constituita in alta valuta, se va folosi cursul comunicat de BNR din data publicarii anuntului de participare. Conturile entitatii contractante sunt: Cont în lei: RO 40 BRDE 445 SV 12412444450, Cont în euro: RO 24BRDE 445 SV 11918064450. Perioada de valabilitate a garantiei de participare este de 120 zile de la…",
           "source_field": "depositsAndWarranties",
           "outcome": "unknown"
+        },
+        {
+          "text": "Sector: CPV 50100000 is outside your watchlist (72000000, 72260000, 48000000, 30200000). The figures may fit, but this is not your line of work as your profile describes it. Decide whether you want it before reading further.",
+          "quote": null,
+          "source_field": "cpvCodeAndName",
+          "outcome": "fail"
         }
       ],
       "unresolved": [
         "similar experience",
-        "participation guarantee"
+        "participation guarantee",
+        "the sector (CPV 50100000 is not in your watchlist)"
       ],
       "requirements": [
         {
@@ -850,10 +924,17 @@
           "quote": null,
           "source_field": null,
           "outcome": "absent"
+        },
+        {
+          "text": "Sector: CPV 32232000 is outside your watchlist (72000000, 72260000, 48000000, 30200000). The figures may fit, but this is not your line of work as your profile describes it. Decide whether you want it before reading further.",
+          "quote": null,
+          "source_field": "cpvCodeAndName",
+          "outcome": "fail"
         }
       ],
       "unresolved": [
-        "similar experience"
+        "similar experience",
+        "the sector (CPV 32232000 is not in your watchlist)"
       ],
       "requirements": [
         {
@@ -911,12 +992,19 @@
           "quote": "Cuantumul GP 680 lei, (1% din val. crt.). Dovada constituirii garantiei de participare/achitarii primei de asigurare se va depune de către ofertant în SEAP odată cu depunerea ofertei. Perioada de valab. este de 3 luni de la termenul limită de primire a ofertelor. GP va fi constituită prin: virament bancar în contul RO32BTRLRONGBE00I6522901 deschis la B.T. sau printr-un instrument de garantare emis de o instituţie de credit sau o societate de asigurări din România, în cond. legii.Pe instrumentul de garantare se va menţiona obiectul procedurii pentru care se constituie, trebuie să prevada că…",
           "source_field": "depositsAndWarranties",
           "outcome": "unknown"
+        },
+        {
+          "text": "Sector: CPV 90910000 is outside your watchlist (72000000, 72260000, 48000000, 30200000). The figures may fit, but this is not your line of work as your profile describes it. Decide whether you want it before reading further.",
+          "quote": null,
+          "source_field": "cpvCodeAndName",
+          "outcome": "fail"
         }
       ],
       "unresolved": [
         "annual turnover",
         "similar experience",
-        "participation guarantee"
+        "participation guarantee",
+        "the sector (CPV 90910000 is not in your watchlist)"
       ],
       "requirements": [
         {
@@ -990,9 +1078,17 @@
           "quote": null,
           "source_field": null,
           "outcome": "absent"
+        },
+        {
+          "text": "Sector: CPV 38500000 is outside your watchlist (72000000, 72260000, 48000000, 30200000). The figures may fit, but this is not your line of work as your profile describes it. Decide whether you want it before reading further.",
+          "quote": null,
+          "source_field": "cpvCodeAndName",
+          "outcome": "fail"
         }
       ],
-      "unresolved": [],
+      "unresolved": [
+        "the sector (CPV 38500000 is not in your watchlist)"
+      ],
       "requirements": [
         {
           "kind": "personal_situation",
@@ -1041,6 +1137,65 @@
           "quote": null,
           "source_field": null,
           "outcome": "absent"
+        },
+        {
+          "text": "Sector: CPV 38000000 is outside your watchlist (72000000, 72260000, 48000000, 30200000). The figures may fit, but this is not your line of work as your profile describes it. Decide whether you want it before reading further.",
+          "quote": null,
+          "source_field": "cpvCodeAndName",
+          "outcome": "fail"
+        }
+      ],
+      "unresolved": [
+        "the sector (CPV 38000000 is not in your watchlist)"
+      ],
+      "requirements": [
+        {
+          "kind": "personal_situation",
+          "amount": null,
+          "currency": null,
+          "quote": "Motive excludere privind situația operatorului economic: Încălcarea obligațiilor în domeniile legislației de mediu In masura cunostintelor sale, operatorul economic si-a Incalcat obligatiile In domeniul legislatiei mediului? Astfel cum sunt mentionate In scopul acestei achizitii publice In legislatia nationala, In anuntul relevant sau In documentele achizitiei ori la articolul 18 alineatul (2) din Directiva 2014/24/UE. Se va completa DUAE de catre ofertanți/asociați, terți susținatori și subcontractanți în conformitate cu art. 193 alin. (1) din Legea nr. 98/2016, cu informatiile aferente…",
+          "source_field": "personalSituation",
+          "confidence": "high"
+        }
+      ]
+    },
+    {
+      "c_notice_id": "100212546",
+      "notice_no": "CN1096901",
+      "title": "Mentenanța sistemului informatic necesar proceselor electorale",
+      "buyer": "AUTORITATEA  ELECTORALA  PERMANENTA",
+      "buyer_key": "16460641",
+      "cpv": "72590000",
+      "cpv_name": "Servicii informatice profesionale (Rev.2)",
+      "notice_kind": "contract notice",
+      "procedure_type": "Licitatie deschisa",
+      "contract_type": "Servicii",
+      "estimated_value_ron": "37450847.89",
+      "published_at": "2026-10-01T10:24:47+03:00",
+      "deadline_at": "2026-11-04T15:00:00+02:00",
+      "has_lots": false,
+      "is_simplified": false,
+      "documents": 9,
+      "decision": "NO-GO",
+      "score": 45,
+      "reasons": [
+        {
+          "text": "annual turnover: the buyer asks for 8.000.000 RON; you have 1.200.000 RON.",
+          "quote": "Cerința: - ofertanții vor face dovada unei cifre de afaceri minime anuale de 8.000.000 lei realizate în ultimele 3 exerciții financiare, respectiv 2023 - 2025 Modalitate de îndeplinire: a) se va prezenta DUAE ca primă dovadă a îndeplinirii cerinței, urmând ca documentele suport de la lit.b și/sau lit.c de mai jos să fie prezentate doar de către ofertantul clasat pe primul loc, după aplicarea criteriului de atribuire (și, dacă este cazul, pentru terții susținători ai acestuia); b) prezentarea situațiilor financiare sau a extraselor din situațiile financiare, în cazul în care publicarea…",
+          "source_field": "efCriteriaMin",
+          "outcome": "fail"
+        },
+        {
+          "text": "similar experience: the buyer does not ask for one.",
+          "quote": null,
+          "source_field": null,
+          "outcome": "absent"
+        },
+        {
+          "text": "participation guarantee: the buyer does not ask for one.",
+          "quote": null,
+          "source_field": null,
+          "outcome": "absent"
         }
       ],
       "unresolved": [],
@@ -1049,7 +1204,76 @@
           "kind": "personal_situation",
           "amount": null,
           "currency": null,
-          "quote": "Motive excludere privind situația operatorului economic: Încălcarea obligațiilor în domeniile legislației de mediu In masura cunostintelor sale, operatorul economic si-a Incalcat obligatiile In domeniul legislatiei mediului? Astfel cum sunt mentionate In scopul acestei achizitii publice In legislatia nationala, In anuntul relevant sau In documentele achizitiei ori la articolul 18 alineatul (2) din Directiva 2014/24/UE. Se va completa DUAE de catre ofertanți/asociați, terți susținatori și subcontractanți în conformitate cu art. 193 alin. (1) din Legea nr. 98/2016, cu informatiile aferente…",
+          "quote": "Motive excludere privind situația operatorului economic: Încălcarea obligațiilor în domeniile legislației de mediu Ofertanții, terții susținători și subcontractanții nu trebuie să se regăsească în situațiile prevăzute la art.167 din Legea nr. 98/2016. Se va completa DUAE în conformitate cu art. 193 alin. (1) din Legea nr. 98/2016. Documentele justificative care probează îndeplinirea celor asumate prin completarea DUAE urmează a fi prezentate, la solicitarea autorității/entității contractante doar ofertantului clasat pe primul loc în clasamentul intermediar întocmit la finalizarea evaluării…",
+          "source_field": "personalSituation",
+          "confidence": "high"
+        },
+        {
+          "kind": "turnover",
+          "amount": "8000000",
+          "currency": "RON",
+          "quote": "Cerința: - ofertanții vor face dovada unei cifre de afaceri minime anuale de 8.000.000 lei realizate în ultimele 3 exerciții financiare, respectiv 2023 - 2025 Modalitate de îndeplinire: a) se va prezenta DUAE ca primă dovadă a îndeplinirii cerinței, urmând ca documentele suport de la lit.b și/sau lit.c de mai jos să fie prezentate doar de către ofertantul clasat pe primul loc, după aplicarea criteriului de atribuire (și, dacă este cazul, pentru terții susținători ai acestuia); b) prezentarea situațiilor financiare sau a extraselor din situațiile financiare, în cazul în care publicarea…",
+          "source_field": "efCriteriaMin",
+          "confidence": "high"
+        }
+      ]
+    },
+    {
+      "c_notice_id": "100212551",
+      "notice_no": "CN1096907",
+      "title": "Furnizare - L-4 Laptop CDI (Stație mobilă de achiziție date și modelare numerică pentru laborator laser)",
+      "buyer": "ROLIX IMPEX SERIES SRL",
+      "buyer_key": "27863780",
+      "cpv": "30213300",
+      "cpv_name": "Computer de birou (Rev.2)",
+      "notice_kind": "contract notice",
+      "procedure_type": "Licitatie deschisa",
+      "contract_type": "Furnizare",
+      "estimated_value_ron": "14925.00",
+      "published_at": "2026-10-01T10:24:42+03:00",
+      "deadline_at": "2026-11-09T15:00:00+02:00",
+      "has_lots": false,
+      "is_simplified": false,
+      "documents": 5,
+      "decision": "CHECK",
+      "score": 45,
+      "reasons": [
+        {
+          "text": "annual turnover: the buyer does not ask for one.",
+          "quote": null,
+          "source_field": null,
+          "outcome": "absent"
+        },
+        {
+          "text": "similar experience: the buyer states a requirement but no figure could be read. Read the quote and decide by hand.",
+          "quote": "Ofertantul are obligația de a preciza partea/ părțile din contract pe care urmează să le subcontracteze și datele de recunoaștere ale subcontractanților propuși, dacă aceștia sunt cunoscuți la momentul depunerii ofertei. DUAE completat de ofertant în care va include și informații privind partea din contract care urmează a fi subcontractată și va avea anexat acordul de subcontractare. Subcontractanții pe a căror capacități se bazează ofertantul vor completa la rândul lor un DUAE separat, incluzând informațiile referitoare la situațiile de excludere astfel cum acestea sunt menționate la…",
+          "source_field": "tpCriteriaQAStandardMin",
+          "outcome": "unknown"
+        },
+        {
+          "text": "participation guarantee: the buyer does not ask for one.",
+          "quote": null,
+          "source_field": null,
+          "outcome": "absent"
+        }
+      ],
+      "unresolved": [
+        "similar experience"
+      ],
+      "requirements": [
+        {
+          "kind": "experience",
+          "amount": null,
+          "currency": null,
+          "quote": "Ofertantul are obligația de a preciza partea/ părțile din contract pe care urmează să le subcontracteze și datele de recunoaștere ale subcontractanților propuși, dacă aceștia sunt cunoscuți la momentul depunerii ofertei. DUAE completat de ofertant în care va include și informații privind partea din contract care urmează a fi subcontractată și va avea anexat acordul de subcontractare. Subcontractanții pe a căror capacități se bazează ofertantul vor completa la rândul lor un DUAE separat, incluzând informațiile referitoare la situațiile de excludere astfel cum acestea sunt menționate la…",
+          "source_field": "tpCriteriaQAStandardMin",
+          "confidence": "low"
+        },
+        {
+          "kind": "personal_situation",
+          "amount": null,
+          "currency": null,
+          "quote": "Motive excludere privind situația operatorului economic: Încălcarea obligațiilor în domeniile legislației de mediu In masura cunostintelor sale, operatorul economic si-a Incalcat obligatiile In domeniul legislatiei mediului? Astfel cum sunt mentionate In scopul acestei achizitii publice In legislatia nationala, In anuntul relevant sau In documentele achizitiei ori la articolul 18 alineatul (2) din Directiva 2014/24/UE. Operatorul economic participant la procedură, indiferent de calitatea acestuia (ofertant cu ofertă individuală, asociat), nu trebuie să se regăsească în situațiile prevăzute…",
           "source_field": "personalSituation",
           "confidence": "high"
         }
@@ -1098,11 +1322,18 @@
           "quote": null,
           "source_field": null,
           "outcome": "unknown"
+        },
+        {
+          "text": "Sector: CPV 33696400 is outside your watchlist (72000000, 72260000, 48000000, 30200000). The figures may fit, but this is not your line of work as your profile describes it. Decide whether you want it before reading further.",
+          "quote": null,
+          "source_field": "cpvCodeAndName",
+          "outcome": "fail"
         }
       ],
       "unresolved": [
         "similar experience",
-        "the lots (not read yet)"
+        "the lots (not read yet)",
+        "the sector (CPV 33696400 is not in your watchlist)"
       ],
       "requirements": [
         {
@@ -1160,10 +1391,17 @@
           "quote": null,
           "source_field": null,
           "outcome": "absent"
+        },
+        {
+          "text": "Sector: CPV 79311100 is outside your watchlist (72000000, 72260000, 48000000, 30200000). The figures may fit, but this is not your line of work as your profile describes it. Decide whether you want it before reading further.",
+          "quote": null,
+          "source_field": "cpvCodeAndName",
+          "outcome": "fail"
         }
       ],
       "unresolved": [
-        "similar experience"
+        "similar experience",
+        "the sector (CPV 79311100 is not in your watchlist)"
       ],
       "requirements": [
         {
@@ -1221,10 +1459,17 @@
           "quote": null,
           "source_field": null,
           "outcome": "absent"
+        },
+        {
+          "text": "Sector: CPV 30000000 is outside your watchlist (72000000, 72260000, 48000000, 30200000). The figures may fit, but this is not your line of work as your profile describes it. Decide whether you want it before reading further.",
+          "quote": null,
+          "source_field": "cpvCodeAndName",
+          "outcome": "fail"
         }
       ],
       "unresolved": [
-        "similar experience"
+        "similar experience",
+        "the sector (CPV 30000000 is not in your watchlist)"
       ],
       "requirements": [
         {
@@ -1282,9 +1527,17 @@
           "quote": null,
           "source_field": null,
           "outcome": "absent"
+        },
+        {
+          "text": "Sector: CPV 43262000 is outside your watchlist (72000000, 72260000, 48000000, 30200000). The figures may fit, but this is not your line of work as your profile describes it. Decide whether you want it before reading further.",
+          "quote": null,
+          "source_field": "cpvCodeAndName",
+          "outcome": "fail"
         }
       ],
-      "unresolved": [],
+      "unresolved": [
+        "the sector (CPV 43262000 is not in your watchlist)"
+      ],
       "requirements": [
         {
           "kind": "experience",
@@ -1341,9 +1594,17 @@
           "quote": null,
           "source_field": null,
           "outcome": "absent"
+        },
+        {
+          "text": "Sector: CPV 39715210 is outside your watchlist (72000000, 72260000, 48000000, 30200000). The figures may fit, but this is not your line of work as your profile describes it. Decide whether you want it before reading further.",
+          "quote": null,
+          "source_field": "cpvCodeAndName",
+          "outcome": "fail"
         }
       ],
-      "unresolved": [],
+      "unresolved": [
+        "the sector (CPV 39715210 is not in your watchlist)"
+      ],
       "requirements": [
         {
           "kind": "experience",
@@ -1406,11 +1667,18 @@
           "quote": null,
           "source_field": null,
           "outcome": "unknown"
+        },
+        {
+          "text": "Sector: CPV 34927000 is outside your watchlist (72000000, 72260000, 48000000, 30200000). The figures may fit, but this is not your line of work as your profile describes it. Decide whether you want it before reading further.",
+          "quote": null,
+          "source_field": "cpvCodeAndName",
+          "outcome": "fail"
         }
       ],
       "unresolved": [
         "similar experience",
-        "the lots (not read yet)"
+        "the lots (not read yet)",
+        "the sector (CPV 34927000 is not in your watchlist)"
       ],
       "requirements": [
         {
@@ -1482,11 +1750,18 @@
           "quote": null,
           "source_field": null,
           "outcome": "unknown"
+        },
+        {
+          "text": "Sector: CPV 33100000 is outside your watchlist (72000000, 72260000, 48000000, 30200000). The figures may fit, but this is not your line of work as your profile describes it. Decide whether you want it before reading further.",
+          "quote": null,
+          "source_field": "cpvCodeAndName",
+          "outcome": "fail"
         }
       ],
       "unresolved": [
         "similar experience",
-        "the lots (not read yet)"
+        "the lots (not read yet)",
+        "the sector (CPV 33100000 is not in your watchlist)"
       ],
       "requirements": [
         {
@@ -1544,9 +1819,17 @@
           "quote": null,
           "source_field": null,
           "outcome": "absent"
+        },
+        {
+          "text": "Sector: CPV 35740000 is outside your watchlist (72000000, 72260000, 48000000, 30200000). The figures may fit, but this is not your line of work as your profile describes it. Decide whether you want it before reading further.",
+          "quote": null,
+          "source_field": "cpvCodeAndName",
+          "outcome": "fail"
         }
       ],
-      "unresolved": [],
+      "unresolved": [
+        "the sector (CPV 35740000 is not in your watchlist)"
+      ],
       "requirements": [
         {
           "kind": "experience",
@@ -1603,9 +1886,17 @@
           "quote": null,
           "source_field": null,
           "outcome": "absent"
+        },
+        {
+          "text": "Sector: CPV 71322500 is outside your watchlist (72000000, 72260000, 48000000, 30200000). The figures may fit, but this is not your line of work as your profile describes it. Decide whether you want it before reading further.",
+          "quote": null,
+          "source_field": "cpvCodeAndName",
+          "outcome": "fail"
         }
       ],
-      "unresolved": [],
+      "unresolved": [
+        "the sector (CPV 71322500 is not in your watchlist)"
+      ],
       "requirements": [
         {
           "kind": "experience",
@@ -1676,10 +1967,17 @@
           "quote": null,
           "source_field": null,
           "outcome": "unknown"
+        },
+        {
+          "text": "Sector: CPV 33696300 is outside your watchlist (72000000, 72260000, 48000000, 30200000). The figures may fit, but this is not your line of work as your profile describes it. Decide whether you want it before reading further.",
+          "quote": null,
+          "source_field": "cpvCodeAndName",
+          "outcome": "fail"
         }
       ],
       "unresolved": [
-        "the lots (not read yet)"
+        "the lots (not read yet)",
+        "the sector (CPV 33696300 is not in your watchlist)"
       ],
       "requirements": [
         {
@@ -1688,6 +1986,73 @@
           "currency": null,
           "quote": "Motive excludere privind situația operatorului economic: Pentru loturile: 1,2,3,4 Încălcarea obligațiilor în domeniile legislației de mediu In masura cunostintelor sale, operatorul economic si-a Incalcat obligatiile In domeniul legislatiei mediului? Astfel cum sunt mentionate In scopul acestei achizitii publice In legislatia nationala, In anuntul relevant sau In documentele achizitiei ori la articolul 18 alineatul (2) din Directiva 2014/24/UE. Pentru loturile: 1,2,3,4 Încălcarea obligațiilor în domeniile legislației muncii In masura cunostintelor sale, operatorul economic si-a Incalcat…",
           "source_field": "personalSituation",
+          "confidence": "high"
+        }
+      ]
+    },
+    {
+      "c_notice_id": "100212544",
+      "notice_no": "CN1096904",
+      "title": "Servicii soluție informatică integrată  în cadrul Proiectului ”Platforma de Servicii Publice Digitale pentru Agenția Națională Anti-Doping\"",
+      "buyer": "AGENTIA NATIONALA ANTI-DOPING",
+      "buyer_key": "18018990",
+      "cpv": "72212000",
+      "cpv_name": "Servicii de programare de software de aplicatie (Rev.2)",
+      "notice_kind": "contract notice",
+      "procedure_type": "Licitatie deschisa",
+      "contract_type": "Servicii",
+      "estimated_value_ron": "23133371.92",
+      "published_at": "2026-10-01T10:24:17+03:00",
+      "deadline_at": "2026-11-18T15:00:00+02:00",
+      "has_lots": false,
+      "is_simplified": false,
+      "documents": 9,
+      "decision": "NO-GO",
+      "score": 45,
+      "reasons": [
+        {
+          "text": "annual turnover: the buyer asks for 46.266.744 RON; you have 1.200.000 RON.",
+          "quote": "Cerinta nr. 1 - Cifra medie anuala de afaceri Cifra medie anuala de afaceri a operatorului economic din ultimele 3 (trei) exercitii financiare incheiate (2023, 2024, 2025) va fi de cel putin dublul valorii estimate a contractului fara TVA, respectiv de cel putin 46266743,84 lei. Nivelul minim solicitat este stabilit cu respectarea plafonului prevazut la art. 175 alin. (2) din Legea nr. 98/2016 si este proportional cu complexitatea, durata (24 de luni) si mecanismul de plata etapizat al contractului. Echivalenta lei/alta valuta se va realiza la cursul mediu anual comunicat de Banca Nationala…",
+          "source_field": "efCriteriaMin",
+          "outcome": "fail"
+        },
+        {
+          "text": "similar experience: the buyer asks for 11.566.686 RON; you have 900.000 RON.",
+          "quote": "Pentru contractele de achizitie de servicii: executarea de servicii de tipul specificat. Operatorul economic va face dovada că, în ultimii 5 (cinci) ani, calculați de la data-limită de depunere a ofertelor, a prestat și a finalizat ori se află în execuție servicii similare, prin minimum 5 (cinci) contracte care, cumulat, acoperă toate categoriile de mai jos: a) Sistem informatic integrat pentru o instituție publică Implementarea unui sistem informatic complex, format din mai multe module software integrate, cu fluxuri de lucru electronice și gestiune electronică a documentelor, pentru o…",
+          "source_field": "tpCriteriaQAStandardMin",
+          "outcome": "fail"
+        },
+        {
+          "text": "participation guarantee: the buyer does not ask for one.",
+          "quote": null,
+          "source_field": null,
+          "outcome": "absent"
+        }
+      ],
+      "unresolved": [],
+      "requirements": [
+        {
+          "kind": "experience",
+          "amount": "11566685.96",
+          "currency": "RON",
+          "quote": "Pentru contractele de achizitie de servicii: executarea de servicii de tipul specificat. Operatorul economic va face dovada că, în ultimii 5 (cinci) ani, calculați de la data-limită de depunere a ofertelor, a prestat și a finalizat ori se află în execuție servicii similare, prin minimum 5 (cinci) contracte care, cumulat, acoperă toate categoriile de mai jos: a) Sistem informatic integrat pentru o instituție publică Implementarea unui sistem informatic complex, format din mai multe module software integrate, cu fluxuri de lucru electronice și gestiune electronică a documentelor, pentru o…",
+          "source_field": "tpCriteriaQAStandardMin",
+          "confidence": "high"
+        },
+        {
+          "kind": "personal_situation",
+          "amount": null,
+          "currency": null,
+          "quote": "Motive excludere privind situația operatorului economic: Încălcarea obligațiilor în domeniile legislației de mediu Se va completa DUAE în conformitate cu art. 193 din Legea nr. 98/2016, cu modificările și completările ulterioare. La solicitarea autorității contractante, ofertantul clasat pe primul loc după aplicarea criteriului de atribuire va prezenta documente justificative actualizate și/sau alte mijloace de probă relevante, emise de autoritățile competente sau alte documente edificatoare, după caz, din care să rezulte respectarea obligațiilor în domeniul legislației de mediu. Ofertantul…",
+          "source_field": "personalSituation",
+          "confidence": "high"
+        },
+        {
+          "kind": "turnover",
+          "amount": "46266743.84",
+          "currency": "RON",
+          "quote": "Cerinta nr. 1 - Cifra medie anuala de afaceri Cifra medie anuala de afaceri a operatorului economic din ultimele 3 (trei) exercitii financiare incheiate (2023, 2024, 2025) va fi de cel putin dublul valorii estimate a contractului fara TVA, respectiv de cel putin 46266743,84 lei. Nivelul minim solicitat este stabilit cu respectarea plafonului prevazut la art. 175 alin. (2) din Legea nr. 98/2016 si este proportional cu complexitatea, durata (24 de luni) si mecanismul de plata etapizat al contractului. Echivalenta lei/alta valuta se va realiza la cursul mediu anual comunicat de Banca Nationala…",
+          "source_field": "efCriteriaMin",
           "confidence": "high"
         }
       ]
@@ -1735,11 +2100,18 @@
           "quote": null,
           "source_field": null,
           "outcome": "unknown"
+        },
+        {
+          "text": "Sector: CPV 71354300 is outside your watchlist (72000000, 72260000, 48000000, 30200000). The figures may fit, but this is not your line of work as your profile describes it. Decide whether you want it before reading further.",
+          "quote": null,
+          "source_field": "cpvCodeAndName",
+          "outcome": "fail"
         }
       ],
       "unresolved": [
         "similar experience",
-        "the lots (not read yet)"
+        "the lots (not read yet)",
+        "the sector (CPV 71354300 is not in your watchlist)"
       ],
       "requirements": [
         {
@@ -1805,9 +2177,17 @@
           "quote": null,
           "source_field": null,
           "outcome": "absent"
+        },
+        {
+          "text": "Sector: CPV 39162110 is outside your watchlist (72000000, 72260000, 48000000, 30200000). The figures may fit, but this is not your line of work as your profile describes it. Decide whether you want it before reading further.",
+          "quote": null,
+          "source_field": "cpvCodeAndName",
+          "outcome": "fail"
         }
       ],
-      "unresolved": [],
+      "unresolved": [
+        "the sector (CPV 39162110 is not in your watchlist)"
+      ],
       "requirements": [
         {
           "kind": "personal_situation",
@@ -1856,10 +2236,17 @@
           "quote": null,
           "source_field": null,
           "outcome": "absent"
+        },
+        {
+          "text": "Sector: CPV 33696500 is outside your watchlist (72000000, 72260000, 48000000, 30200000). The figures may fit, but this is not your line of work as your profile describes it. Decide whether you want it before reading further.",
+          "quote": null,
+          "source_field": "cpvCodeAndName",
+          "outcome": "fail"
         }
       ],
       "unresolved": [
-        "similar experience"
+        "similar experience",
+        "the sector (CPV 33696500 is not in your watchlist)"
       ],
       "requirements": [
         {
@@ -1917,9 +2304,17 @@
           "quote": null,
           "source_field": null,
           "outcome": "absent"
+        },
+        {
+          "text": "Sector: CPV 34711200 is outside your watchlist (72000000, 72260000, 48000000, 30200000). The figures may fit, but this is not your line of work as your profile describes it. Decide whether you want it before reading further.",
+          "quote": null,
+          "source_field": "cpvCodeAndName",
+          "outcome": "fail"
         }
       ],
-      "unresolved": [],
+      "unresolved": [
+        "the sector (CPV 34711200 is not in your watchlist)"
+      ],
       "requirements": [
         {
           "kind": "personal_situation",
@@ -1968,10 +2363,17 @@
           "quote": null,
           "source_field": null,
           "outcome": "absent"
+        },
+        {
+          "text": "Sector: CPV 44160000 is outside your watchlist (72000000, 72260000, 48000000, 30200000). The figures may fit, but this is not your line of work as your profile describes it. Decide whether you want it before reading further.",
+          "quote": null,
+          "source_field": "cpvCodeAndName",
+          "outcome": "fail"
         }
       ],
       "unresolved": [
-        "similar experience"
+        "similar experience",
+        "the sector (CPV 44160000 is not in your watchlist)"
       ],
       "requirements": [
         {
@@ -2029,10 +2431,17 @@
           "quote": null,
           "source_field": null,
           "outcome": "absent"
+        },
+        {
+          "text": "Sector: CPV 33100000 is outside your watchlist (72000000, 72260000, 48000000, 30200000). The figures may fit, but this is not your line of work as your profile describes it. Decide whether you want it before reading further.",
+          "quote": null,
+          "source_field": "cpvCodeAndName",
+          "outcome": "fail"
         }
       ],
       "unresolved": [
-        "similar experience"
+        "similar experience",
+        "the sector (CPV 33100000 is not in your watchlist)"
       ],
       "requirements": [
         {
@@ -2090,9 +2499,17 @@
           "quote": null,
           "source_field": null,
           "outcome": "absent"
+        },
+        {
+          "text": "Sector: CPV 39717200 is outside your watchlist (72000000, 72260000, 48000000, 30200000). The figures may fit, but this is not your line of work as your profile describes it. Decide whether you want it before reading further.",
+          "quote": null,
+          "source_field": "cpvCodeAndName",
+          "outcome": "fail"
         }
       ],
-      "unresolved": [],
+      "unresolved": [
+        "the sector (CPV 39717200 is not in your watchlist)"
+      ],
       "requirements": [
         {
           "kind": "personal_situation",
@@ -2122,7 +2539,7 @@
       "is_simplified": false,
       "documents": 4,
       "decision": "CHECK",
-      "score": 40,
+      "score": 35,
       "reasons": [
         {
           "text": "annual turnover: the buyer does not ask for one.",
@@ -2147,10 +2564,17 @@
           "quote": null,
           "source_field": null,
           "outcome": "unknown"
+        },
+        {
+          "text": "Sector: CPV 77211100 is outside your watchlist (72000000, 72260000, 48000000, 30200000). The figures may fit, but this is not your line of work as your profile describes it. Decide whether you want it before reading further.",
+          "quote": null,
+          "source_field": "cpvCodeAndName",
+          "outcome": "fail"
         }
       ],
       "unresolved": [
-        "the lots (not read yet)"
+        "the lots (not read yet)",
+        "the sector (CPV 77211100 is not in your watchlist)"
       ],
       "requirements": [
         {
@@ -2200,9 +2624,17 @@
           "quote": null,
           "source_field": null,
           "outcome": "absent"
+        },
+        {
+          "text": "Sector: CPV 90500000 is outside your watchlist (72000000, 72260000, 48000000, 30200000). The figures may fit, but this is not your line of work as your profile describes it. Decide whether you want it before reading further.",
+          "quote": null,
+          "source_field": "cpvCodeAndName",
+          "outcome": "fail"
         }
       ],
-      "unresolved": [],
+      "unresolved": [
+        "the sector (CPV 90500000 is not in your watchlist)"
+      ],
       "requirements": [
         {
           "kind": "experience",
@@ -2267,9 +2699,17 @@
           "quote": "Garanția de participare este în cuantum de 34.000,00 lei și trebuie să fie valabilă cel puțin pe întreaga perioadă de valabilitate a ofertei. Aceasta se constituie conform art. 164¹ alin. (4) din Legea nr. 99/2016, pentru virament bancar în contul S.P.E.E.H. Hidroelectrica S.A., IBAN RO15 RNCB 0072 0183 3187 0001. Instrumentul de garantare trebuie să fie irevocabil și necondiționat. Dovada constituirii garanției de participare se transmite în SEAP, împreună cu oferta, până la data și ora-limită de depunere a ofertelor. Pentru garanțiile constituite în altă monedă, echivalența se determină la…",
           "source_field": "depositsAndWarranties",
           "outcome": "pass"
+        },
+        {
+          "text": "Sector: CPV 50610000 is outside your watchlist (72000000, 72260000, 48000000, 30200000). The figures may fit, but this is not your line of work as your profile describes it. Decide whether you want it before reading further.",
+          "quote": null,
+          "source_field": "cpvCodeAndName",
+          "outcome": "fail"
         }
       ],
-      "unresolved": [],
+      "unresolved": [
+        "the sector (CPV 50610000 is not in your watchlist)"
+      ],
       "requirements": [
         {
           "kind": "deposit",
@@ -2285,65 +2725,6 @@
           "currency": null,
           "quote": "Motive excludere privind situația operatorului economic: Încălcarea obligațiilor în domeniile legislației de mediu Toți operatorii economici participanţi la procedură (ofertant, ofertant asociat, subcontractant declarat, după caz) vor completa Documentul Unic de Achiziții European (DUAE) – Secţiunea Motive de excludere cu informaţiile aferente situaţiei lor în care fiecare va preciza dacă, in masura cunostintelor sale, si-a incalcat obligatiile in domeniul legislatiei mediului astfel cum sunt mentionate in scopul acestei achizitii publice in legislatia nationala, in anuntul relevant sau in…",
           "source_field": "personalSituation",
-          "confidence": "high"
-        }
-      ]
-    },
-    {
-      "c_notice_id": "100212546",
-      "notice_no": "CN1096901",
-      "title": "Mentenanța sistemului informatic necesar proceselor electorale",
-      "buyer": "AUTORITATEA  ELECTORALA  PERMANENTA",
-      "buyer_key": "16460641",
-      "cpv": "72590000",
-      "cpv_name": "Servicii informatice profesionale (Rev.2)",
-      "notice_kind": "contract notice",
-      "procedure_type": "Licitatie deschisa",
-      "contract_type": "Servicii",
-      "estimated_value_ron": "37450847.89",
-      "published_at": "2026-10-01T10:24:47+03:00",
-      "deadline_at": "2026-11-04T15:00:00+02:00",
-      "has_lots": false,
-      "is_simplified": false,
-      "documents": 9,
-      "decision": "NO-GO",
-      "score": 20,
-      "reasons": [
-        {
-          "text": "annual turnover: the buyer asks for 8.000.000 RON; you have 1.200.000 RON.",
-          "quote": "Cerința: - ofertanții vor face dovada unei cifre de afaceri minime anuale de 8.000.000 lei realizate în ultimele 3 exerciții financiare, respectiv 2023 - 2025 Modalitate de îndeplinire: a) se va prezenta DUAE ca primă dovadă a îndeplinirii cerinței, urmând ca documentele suport de la lit.b și/sau lit.c de mai jos să fie prezentate doar de către ofertantul clasat pe primul loc, după aplicarea criteriului de atribuire (și, dacă este cazul, pentru terții susținători ai acestuia); b) prezentarea situațiilor financiare sau a extraselor din situațiile financiare, în cazul în care publicarea…",
-          "source_field": "efCriteriaMin",
-          "outcome": "fail"
-        },
-        {
-          "text": "similar experience: the buyer does not ask for one.",
-          "quote": null,
-          "source_field": null,
-          "outcome": "absent"
-        },
-        {
-          "text": "participation guarantee: the buyer does not ask for one.",
-          "quote": null,
-          "source_field": null,
-          "outcome": "absent"
-        }
-      ],
-      "unresolved": [],
-      "requirements": [
-        {
-          "kind": "personal_situation",
-          "amount": null,
-          "currency": null,
-          "quote": "Motive excludere privind situația operatorului economic: Încălcarea obligațiilor în domeniile legislației de mediu Ofertanții, terții susținători și subcontractanții nu trebuie să se regăsească în situațiile prevăzute la art.167 din Legea nr. 98/2016. Se va completa DUAE în conformitate cu art. 193 alin. (1) din Legea nr. 98/2016. Documentele justificative care probează îndeplinirea celor asumate prin completarea DUAE urmează a fi prezentate, la solicitarea autorității/entității contractante doar ofertantului clasat pe primul loc în clasamentul intermediar întocmit la finalizarea evaluării…",
-          "source_field": "personalSituation",
-          "confidence": "high"
-        },
-        {
-          "kind": "turnover",
-          "amount": "8000000",
-          "currency": "RON",
-          "quote": "Cerința: - ofertanții vor face dovada unei cifre de afaceri minime anuale de 8.000.000 lei realizate în ultimele 3 exerciții financiare, respectiv 2023 - 2025 Modalitate de îndeplinire: a) se va prezenta DUAE ca primă dovadă a îndeplinirii cerinței, urmând ca documentele suport de la lit.b și/sau lit.c de mai jos să fie prezentate doar de către ofertantul clasat pe primul loc, după aplicarea criteriului de atribuire (și, dacă este cazul, pentru terții susținători ai acestuia); b) prezentarea situațiilor financiare sau a extraselor din situațiile financiare, în cazul în care publicarea…",
-          "source_field": "efCriteriaMin",
           "confidence": "high"
         }
       ]
@@ -2385,9 +2766,17 @@
           "quote": null,
           "source_field": null,
           "outcome": "absent"
+        },
+        {
+          "text": "Sector: CPV 45211000 is outside your watchlist (72000000, 72260000, 48000000, 30200000). The figures may fit, but this is not your line of work as your profile describes it. Decide whether you want it before reading further.",
+          "quote": null,
+          "source_field": "cpvCodeAndName",
+          "outcome": "fail"
         }
       ],
-      "unresolved": [],
+      "unresolved": [
+        "the sector (CPV 45211000 is not in your watchlist)"
+      ],
       "requirements": [
         {
           "kind": "experience",
@@ -2450,10 +2839,17 @@
           "quote": null,
           "source_field": null,
           "outcome": "unknown"
+        },
+        {
+          "text": "Sector: CPV 33652100 is outside your watchlist (72000000, 72260000, 48000000, 30200000). The figures may fit, but this is not your line of work as your profile describes it. Decide whether you want it before reading further.",
+          "quote": null,
+          "source_field": "cpvCodeAndName",
+          "outcome": "fail"
         }
       ],
       "unresolved": [
-        "the lots (not read yet)"
+        "the lots (not read yet)",
+        "the sector (CPV 33652100 is not in your watchlist)"
       ],
       "requirements": [
         {
@@ -2461,67 +2857,6 @@
           "amount": null,
           "currency": null,
           "quote": "Motive excludere privind situația operatorului economic: Pentru loturile: 1,10,11,12,13,14,15,16,17,18,19,2,20,21,22,23,24,25,26,27,28,29,3,30,31,32,33,34,35,36,37,38,39,4,40,41,42,43,44,45,46,47,48,49,5,50,51,52,53,54,55,56,57,58,59,6,60,61,62,63,64,65,66,67,68,69,7,70,8,9 Încălcarea obligațiilor în domeniile legislației de mediu Ofertantii deveniti Contractanti au obligația de a respecta în executarea Contractului, obligațiile aplicabile în domeniul mediului, social și al muncii instituite prin dreptul Uniunii, prin dreptul național, prin acorduri colective sau prin dispozițiile…",
-          "source_field": "personalSituation",
-          "confidence": "high"
-        }
-      ]
-    },
-    {
-      "c_notice_id": "100212551",
-      "notice_no": "CN1096907",
-      "title": "Furnizare - L-4 Laptop CDI (Stație mobilă de achiziție date și modelare numerică pentru laborator laser)",
-      "buyer": "ROLIX IMPEX SERIES SRL",
-      "buyer_key": "27863780",
-      "cpv": "30213300",
-      "cpv_name": "Computer de birou (Rev.2)",
-      "notice_kind": "contract notice",
-      "procedure_type": "Licitatie deschisa",
-      "contract_type": "Furnizare",
-      "estimated_value_ron": "14925.00",
-      "published_at": "2026-10-01T10:24:42+03:00",
-      "deadline_at": "2026-11-09T15:00:00+02:00",
-      "has_lots": false,
-      "is_simplified": false,
-      "documents": 5,
-      "decision": "CHECK",
-      "score": 20,
-      "reasons": [
-        {
-          "text": "annual turnover: the buyer does not ask for one.",
-          "quote": null,
-          "source_field": null,
-          "outcome": "absent"
-        },
-        {
-          "text": "similar experience: the buyer states a requirement but no figure could be read. Read the quote and decide by hand.",
-          "quote": "Ofertantul are obligația de a preciza partea/ părțile din contract pe care urmează să le subcontracteze și datele de recunoaștere ale subcontractanților propuși, dacă aceștia sunt cunoscuți la momentul depunerii ofertei. DUAE completat de ofertant în care va include și informații privind partea din contract care urmează a fi subcontractată și va avea anexat acordul de subcontractare. Subcontractanții pe a căror capacități se bazează ofertantul vor completa la rândul lor un DUAE separat, incluzând informațiile referitoare la situațiile de excludere astfel cum acestea sunt menționate la…",
-          "source_field": "tpCriteriaQAStandardMin",
-          "outcome": "unknown"
-        },
-        {
-          "text": "participation guarantee: the buyer does not ask for one.",
-          "quote": null,
-          "source_field": null,
-          "outcome": "absent"
-        }
-      ],
-      "unresolved": [
-        "similar experience"
-      ],
-      "requirements": [
-        {
-          "kind": "experience",
-          "amount": null,
-          "currency": null,
-          "quote": "Ofertantul are obligația de a preciza partea/ părțile din contract pe care urmează să le subcontracteze și datele de recunoaștere ale subcontractanților propuși, dacă aceștia sunt cunoscuți la momentul depunerii ofertei. DUAE completat de ofertant în care va include și informații privind partea din contract care urmează a fi subcontractată și va avea anexat acordul de subcontractare. Subcontractanții pe a căror capacități se bazează ofertantul vor completa la rândul lor un DUAE separat, incluzând informațiile referitoare la situațiile de excludere astfel cum acestea sunt menționate la…",
-          "source_field": "tpCriteriaQAStandardMin",
-          "confidence": "low"
-        },
-        {
-          "kind": "personal_situation",
-          "amount": null,
-          "currency": null,
-          "quote": "Motive excludere privind situația operatorului economic: Încălcarea obligațiilor în domeniile legislației de mediu In masura cunostintelor sale, operatorul economic si-a Incalcat obligatiile In domeniul legislatiei mediului? Astfel cum sunt mentionate In scopul acestei achizitii publice In legislatia nationala, In anuntul relevant sau In documentele achizitiei ori la articolul 18 alineatul (2) din Directiva 2014/24/UE. Operatorul economic participant la procedură, indiferent de calitatea acestuia (ofertant cu ofertă individuală, asociat), nu trebuie să se regăsească în situațiile prevăzute…",
           "source_field": "personalSituation",
           "confidence": "high"
         }
@@ -2570,11 +2905,18 @@
           "quote": null,
           "source_field": null,
           "outcome": "unknown"
+        },
+        {
+          "text": "Sector: CPV 33183100 is outside your watchlist (72000000, 72260000, 48000000, 30200000). The figures may fit, but this is not your line of work as your profile describes it. Decide whether you want it before reading further.",
+          "quote": null,
+          "source_field": "cpvCodeAndName",
+          "outcome": "fail"
         }
       ],
       "unresolved": [
         "similar experience",
-        "the lots (not read yet)"
+        "the lots (not read yet)",
+        "the sector (CPV 33183100 is not in your watchlist)"
       ],
       "requirements": [
         {
@@ -2632,9 +2974,17 @@
           "quote": null,
           "source_field": null,
           "outcome": "absent"
+        },
+        {
+          "text": "Sector: CPV 39121200 is outside your watchlist (72000000, 72260000, 48000000, 30200000). The figures may fit, but this is not your line of work as your profile describes it. Decide whether you want it before reading further.",
+          "quote": null,
+          "source_field": "cpvCodeAndName",
+          "outcome": "fail"
         }
       ],
-      "unresolved": [],
+      "unresolved": [
+        "the sector (CPV 39121200 is not in your watchlist)"
+      ],
       "requirements": [
         {
           "kind": "experience",
@@ -2705,12 +3055,19 @@
           "quote": null,
           "source_field": null,
           "outcome": "unknown"
+        },
+        {
+          "text": "Sector: CPV 33652000 is outside your watchlist (72000000, 72260000, 48000000, 30200000). The figures may fit, but this is not your line of work as your profile describes it. Decide whether you want it before reading further.",
+          "quote": null,
+          "source_field": "cpvCodeAndName",
+          "outcome": "fail"
         }
       ],
       "unresolved": [
         "annual turnover",
         "similar experience",
-        "the lots (not read yet)"
+        "the lots (not read yet)",
+        "the sector (CPV 33652000 is not in your watchlist)"
       ],
       "requirements": [
         {
@@ -2736,73 +3093,6 @@
           "quote": "Completarea Documentului unic de achiziție european (DUAE). La solicitarea autorității contractante, operatorilor economici clasati pe locurile I, II si III în clasamentul intermediar vor prezenta documentele justificative conform DUAE.",
           "source_field": "efCriteriaMin",
           "confidence": "low"
-        }
-      ]
-    },
-    {
-      "c_notice_id": "100212544",
-      "notice_no": "CN1096904",
-      "title": "Servicii soluție informatică integrată  în cadrul Proiectului ”Platforma de Servicii Publice Digitale pentru Agenția Națională Anti-Doping\"",
-      "buyer": "AGENTIA NATIONALA ANTI-DOPING",
-      "buyer_key": "18018990",
-      "cpv": "72212000",
-      "cpv_name": "Servicii de programare de software de aplicatie (Rev.2)",
-      "notice_kind": "contract notice",
-      "procedure_type": "Licitatie deschisa",
-      "contract_type": "Servicii",
-      "estimated_value_ron": "23133371.92",
-      "published_at": "2026-10-01T10:24:17+03:00",
-      "deadline_at": "2026-11-18T15:00:00+02:00",
-      "has_lots": false,
-      "is_simplified": false,
-      "documents": 9,
-      "decision": "NO-GO",
-      "score": 20,
-      "reasons": [
-        {
-          "text": "annual turnover: the buyer asks for 46.266.744 RON; you have 1.200.000 RON.",
-          "quote": "Cerinta nr. 1 - Cifra medie anuala de afaceri Cifra medie anuala de afaceri a operatorului economic din ultimele 3 (trei) exercitii financiare incheiate (2023, 2024, 2025) va fi de cel putin dublul valorii estimate a contractului fara TVA, respectiv de cel putin 46266743,84 lei. Nivelul minim solicitat este stabilit cu respectarea plafonului prevazut la art. 175 alin. (2) din Legea nr. 98/2016 si este proportional cu complexitatea, durata (24 de luni) si mecanismul de plata etapizat al contractului. Echivalenta lei/alta valuta se va realiza la cursul mediu anual comunicat de Banca Nationala…",
-          "source_field": "efCriteriaMin",
-          "outcome": "fail"
-        },
-        {
-          "text": "similar experience: the buyer asks for 11.566.686 RON; you have 900.000 RON.",
-          "quote": "Pentru contractele de achizitie de servicii: executarea de servicii de tipul specificat. Operatorul economic va face dovada că, în ultimii 5 (cinci) ani, calculați de la data-limită de depunere a ofertelor, a prestat și a finalizat ori se află în execuție servicii similare, prin minimum 5 (cinci) contracte care, cumulat, acoperă toate categoriile de mai jos: a) Sistem informatic integrat pentru o instituție publică Implementarea unui sistem informatic complex, format din mai multe module software integrate, cu fluxuri de lucru electronice și gestiune electronică a documentelor, pentru o…",
-          "source_field": "tpCriteriaQAStandardMin",
-          "outcome": "fail"
-        },
-        {
-          "text": "participation guarantee: the buyer does not ask for one.",
-          "quote": null,
-          "source_field": null,
-          "outcome": "absent"
-        }
-      ],
-      "unresolved": [],
-      "requirements": [
-        {
-          "kind": "experience",
-          "amount": "11566685.96",
-          "currency": "RON",
-          "quote": "Pentru contractele de achizitie de servicii: executarea de servicii de tipul specificat. Operatorul economic va face dovada că, în ultimii 5 (cinci) ani, calculați de la data-limită de depunere a ofertelor, a prestat și a finalizat ori se află în execuție servicii similare, prin minimum 5 (cinci) contracte care, cumulat, acoperă toate categoriile de mai jos: a) Sistem informatic integrat pentru o instituție publică Implementarea unui sistem informatic complex, format din mai multe module software integrate, cu fluxuri de lucru electronice și gestiune electronică a documentelor, pentru o…",
-          "source_field": "tpCriteriaQAStandardMin",
-          "confidence": "high"
-        },
-        {
-          "kind": "personal_situation",
-          "amount": null,
-          "currency": null,
-          "quote": "Motive excludere privind situația operatorului economic: Încălcarea obligațiilor în domeniile legislației de mediu Se va completa DUAE în conformitate cu art. 193 din Legea nr. 98/2016, cu modificările și completările ulterioare. La solicitarea autorității contractante, ofertantul clasat pe primul loc după aplicarea criteriului de atribuire va prezenta documente justificative actualizate și/sau alte mijloace de probă relevante, emise de autoritățile competente sau alte documente edificatoare, după caz, din care să rezulte respectarea obligațiilor în domeniul legislației de mediu. Ofertantul…",
-          "source_field": "personalSituation",
-          "confidence": "high"
-        },
-        {
-          "kind": "turnover",
-          "amount": "46266743.84",
-          "currency": "RON",
-          "quote": "Cerinta nr. 1 - Cifra medie anuala de afaceri Cifra medie anuala de afaceri a operatorului economic din ultimele 3 (trei) exercitii financiare incheiate (2023, 2024, 2025) va fi de cel putin dublul valorii estimate a contractului fara TVA, respectiv de cel putin 46266743,84 lei. Nivelul minim solicitat este stabilit cu respectarea plafonului prevazut la art. 175 alin. (2) din Legea nr. 98/2016 si este proportional cu complexitatea, durata (24 de luni) si mecanismul de plata etapizat al contractului. Echivalenta lei/alta valuta se va realiza la cursul mediu anual comunicat de Banca Nationala…",
-          "source_field": "efCriteriaMin",
-          "confidence": "high"
         }
       ]
     },
@@ -2843,9 +3133,17 @@
           "quote": null,
           "source_field": null,
           "outcome": "absent"
+        },
+        {
+          "text": "Sector: CPV 34144910 is outside your watchlist (72000000, 72260000, 48000000, 30200000). The figures may fit, but this is not your line of work as your profile describes it. Decide whether you want it before reading further.",
+          "quote": null,
+          "source_field": "cpvCodeAndName",
+          "outcome": "fail"
         }
       ],
-      "unresolved": [],
+      "unresolved": [
+        "the sector (CPV 34144910 is not in your watchlist)"
+      ],
       "requirements": [
         {
           "kind": "experience",
