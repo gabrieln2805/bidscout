@@ -10,3 +10,6 @@ profile.yaml
 # dbt build output
 warehouse/target/
 warehouse/logs/
+
+# Private notes: market analysis, not for the public repo
+strategy/
