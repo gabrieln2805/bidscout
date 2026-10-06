@@ -81,6 +81,26 @@ def decide(
         )
         unresolved.append("the lots (not read yet)")
 
+    # A tender outside the company's line of work is never a GO, however well
+    # the company clears its figures. The score has a CPV component, but the
+    # others (value, headroom, deadline) can pass the threshold without it: on
+    # the first live run a security-guard tender scored GO 75 for an IT company.
+    # It is held at CHECK, not NO-GO: bidding outside your CPV codes is allowed,
+    # and whether you want to is the company's call, not a fact we measured.
+    if _in_watchlist(profile, context.get("cpv")) is False:
+        cpv = str(context.get("cpv"))
+        reasons.append(
+            Reason(
+                f"Sector: CPV {cpv} is outside your watchlist "
+                f"({', '.join(str(code) for code in profile.get('cpv_watchlist', []))}). "
+                "The figures may fit, but this is not your line of work as your profile "
+                "describes it. Decide whether you want it before reading further.",
+                source_field="cpvCodeAndName",
+                outcome=_FAIL,
+            )
+        )
+        unresolved.append(f"the sector (CPV {cpv} is not in your watchlist)")
+
     score = _score(requirements, profile, rules, context, reasons)
 
     if failed and not lots_unread:
@@ -188,11 +208,10 @@ def _component(
 ) -> float | None:
     """Return 0.0-1.0 for one scoring component, or None when not measurable."""
     if key == "cpv_match":
-        watchlist = {str(code) for code in profile.get("cpv_watchlist", [])}
-        cpv = str(context.get("cpv") or "")
-        if not watchlist or not cpv:
+        match = _in_watchlist(profile, context.get("cpv"))
+        if match is None:
             return None
-        return 1.0 if any(cpv.startswith(code[:4]) for code in watchlist) else 0.0
+        return 1.0 if match else 0.0
 
     if key == "value_fit":
         value = context.get("estimated_value_ron")
@@ -214,6 +233,38 @@ def _component(
         return max(0.0, min(1.0, (float(days) - 5.0) / 16.0))
 
     return None
+
+
+def _in_watchlist(profile: dict[str, Any], cpv: Any) -> bool | None:
+    """Whether the notice's primary CPV is in the profile's watchlist.
+
+    None when either side is missing: no watchlist, or a notice with no CPV,
+    is "we could not tell", never "outside your line of work".
+
+    CPV codes are a tree, and the trailing zeros say which level a code names:
+    72000000 is all of division 72, 72260000 one group inside it. So a
+    watchlist entry matches every code that starts with its significant
+    digits. Comparing a fixed four digits, as this did until 6 October 2026,
+    put software services (72260000) outside an IT-services (72000000)
+    watchlist.
+    """
+    prefixes = [_significant(code) for code in profile.get("cpv_watchlist") or []]
+    prefixes = [prefix for prefix in prefixes if prefix]
+    code = str(cpv or "").split("-")[0].strip()
+    if not prefixes or not code:
+        return None
+    return any(code.startswith(prefix) for prefix in prefixes)
+
+
+def _significant(code: Any) -> str:
+    """"72000000-5" -> "72", "30200000" -> "302": the digits that name the node.
+
+    Never shorter than the two-digit division, so a stray "00000000" cannot
+    match everything.
+    """
+    digits = str(code).split("-")[0].strip()
+    trimmed = digits.rstrip("0")
+    return digits[:2] if len(trimmed) < 2 else trimmed
 
 
 def _headroom(requirements: list[Requirement], profile: dict[str, Any]) -> float | None:

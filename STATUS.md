@@ -41,9 +41,10 @@ SICAP API --watch/fetch--> landing (SQLite) --score--> --dbt build--> warehouse 
 ```
 
 The page shows the 2 October run: 129 notices, **44 of 44 contract notices
-read and scored** (1 GO, 32 CHECK, 11 NO-GO against the example company), 85
-simplified and concession notices listed as not read. It does not refresh on
-its own yet.
+read and scored** (0 GO, 33 CHECK, 11 NO-GO against the example company), 85
+simplified and concession notices listed as not read. Only 4 of the 44 are in
+the example company's IT watchlist (about one IT notice a day, as the September
+spike measured). It does not refresh on its own yet.
 
 | Piece | State | Portfolio value |
 |---|---|---|
@@ -53,9 +54,9 @@ its own yet.
 | Data model | dbt warehouse, staging → core → app tables, 52 data tests | Shows modern data engineering |
 | Browsing the data | `make explore` (DuckDB UI), `make docs` (dbt docs) | |
 | The page | **Live on GitHub Pages**, reads the app tables only | The thing people open |
-| Tests | 187 offline tests, `ruff` clean | No CI yet, so nobody sees them pass |
+| Tests | 192 offline tests, `ruff` clean | No CI yet, so nobody sees them pass |
 | Measuring accuracy | Harness works; only 3 labelled notices | The biggest credibility gap |
-| Out-of-sector GOs | **A security-guard tender shows GO 75 for an IT company** | A visible flaw on the live page |
+| Out-of-sector GOs | Fixed 6 October: outside the CPV watchlist is CHECK at most | The live page's only GO was this mistake |
 | Daily refresh | Not started | Without it, the "live" page is a snapshot |
 | Simplified notices (~64% of volume) | Listed, not read; endpoint unknown | |
 | AI layer | Designed, not built | High portfolio value if done carefully |
@@ -67,9 +68,11 @@ its own yet.
 
 Ordered by what a reader of the project notices first.
 
-1. **Fix the wrong-sector GO.** A tender outside the profile's `cpv_watchlist`
-   can be CHECK at most, with a reason that says why. One rule, one test, one
-   re-export. The first tender on the live page should not be a mistake.
+1. ~~**Fix the wrong-sector GO.**~~ **Done 6 October.** A tender outside the
+   profile's `cpv_watchlist` is CHECK at most, with a "Sector:" reason; a real
+   NO-GO stays NO-GO. Building it found a second bug: the watchlist compared a
+   fixed four digits, so software services (72260000) counted as outside an
+   IT-services (72000000) watchlist. It now follows the CPV tree.
 2. **CI on GitHub.** A workflow that runs the tests, `ruff` and `dbt build` on
    the demo fixtures on every push, with a badge in the README. It costs an
    hour and makes the 187 tests visible to anyone.

@@ -13,7 +13,8 @@ available_guarantee_ron: 50000       # cash you can lock up to take part
 min_contract_ron: 50000
 max_contract_ron: 3000000
 
-# CPV codes you want to watch. The first four digits are what is matched.
+# CPV codes you want to watch. A code covers everything below it in the CPV
+# tree: 72000000 covers 72260000. A notice outside this list is never a GO.
 cpv_watchlist:
   - "72000000"
   - "72260000"
