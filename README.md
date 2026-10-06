@@ -5,6 +5,8 @@
 It reads each new tender, compares it with your company profile, and answers
 one question: *should you bid?*
 
+*Not technical? Start with the plain-language overview: [OVERVIEW.md](OVERVIEW.md).*
+
 **The page:** <https://gabrieln2805.github.io/bidscout/> — real tenders from the
 public SICAP API, scored against an example company. Every number on it comes
 out of the warehouse tables described below, by one command.
